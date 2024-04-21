@@ -10,7 +10,7 @@ public class Car extends Sprite {
 	// constants
 	protected final static int CAR_DIAMETER = 40;
 	protected final static double CAR_SPEED = 120/CAR_DIAMETER;
-	public final static String CAR_IMG = "images/car1.png";
+	public final static String CAR_IMG = "images/car_yellow.png";
 	
 	public Car(int xPos, int yPos) {
 		super(xPos, yPos);

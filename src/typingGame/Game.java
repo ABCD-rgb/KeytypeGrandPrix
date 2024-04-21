@@ -9,9 +9,12 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.geometry.Insets;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -37,6 +40,7 @@ public class Game {
 	public final static int WINDOW_CENTER = WINDOW_WIDTH / 2;
 	public final static Image BG_IMG = new Image("images/welcome_bg.png", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false);
 	public final static ImageView LOGO = new ImageView(new Image("images/logo.png"));
+//	public final static ImageView LOGO_SMALL = new ImageView(new Image("images/logo.png"));
 	public final static Image WINDOWLOGO = new Image("images/window_logo.png");
 
 	public Game() {
@@ -179,7 +183,74 @@ public class Game {
 	
 	// TODO: instructions scene
 	public void initInstruct(Stage stage) {
-		
+		StackPane root = new StackPane();
+
+	    ImageView backgroundImage = new ImageView(BG_IMG);
+	    
+	    VBox content = new VBox();
+	    content.setAlignment(Pos.CENTER);
+	    content.setSpacing(20);
+	    
+	    Font titleFont = Font.font("Verdana", FontWeight.BOLD, 30);
+	    Font bodyFont = Font.font("Verdana", 16);
+
+	    LOGO.setFitWidth(150);
+	    LOGO.setFitHeight(50);
+	    
+	    Label instructionsHeading = new Label("Instructions");
+	    instructionsHeading.setFont(titleFont);
+
+	    Label introText = new Label("Rev up your engines and put your typing skills to the ultimate test!");
+	    introText.setFont(bodyFont);
+
+	    Label readyText = new Label("Ready to dive into the action? Here's your quick-start guide!");
+	    readyText.setFont(bodyFont);
+	    readyText.setStyle("-fx-font-weight: bold;");
+
+	    VBox instructionsBox = new VBox();
+	    instructionsBox.setSpacing(10);
+	    instructionsBox.setPadding(new Insets(20));
+	    instructionsBox.setStyle("-fx-background-color: white; -fx-background-radius: 10px;");
+	    instructionsBox.setMaxWidth(600); // Set a maximum width for the instructions box
+
+	    Label instruction1 = new Label("• Watch as the text appears on your screen");
+	    instruction1.setFont(bodyFont);
+
+	    Label instruction2 = new Label("• Type the displayed text as quickly and accurately as possible");
+	    instruction2.setFont(bodyFont);
+
+	    Label instruction3 = new Label("• Watch your car speed up with each correct keystroke");
+	    instruction3.setFont(bodyFont);
+
+	    Label instruction4 = new Label("• Maintain a high level of accuracy to avoid penalties");
+	    instruction4.setFont(bodyFont);
+
+	    Label instruction5 = new Label("• Be the first to complete the text and cross the finish line to win!");
+	    instruction5.setFont(bodyFont);
+
+	    instructionsBox.getChildren().addAll(instruction1, instruction2, instruction3, instruction4, instruction5);
+
+	    Label joinText = new Label("Join now and experience the thrill of a high-speed typing race!");
+	    joinText.setFont(bodyFont);
+
+	    Label returnText = new Label("Press [Enter] to return to the main menu");
+	    returnText.setFont(bodyFont);
+
+	    content.getChildren().addAll(LOGO, instructionsHeading, introText, readyText,
+	            instructionsBox, joinText, returnText);
+
+	    root.getChildren().addAll(backgroundImage, content);
+
+	    Scene instructionsScene = new Scene(root, 800, 600);
+	    
+	    // Return to the main screen when Enter key is pressed
+	    instructionsScene.setOnKeyPressed(event -> {
+	        if (event.getCode() == KeyCode.ENTER) {
+	            initMenu(stage); // Call the initMenu method to reinitialize the main menu
+	        }
+	    });
+	    
+	    stage.setScene(instructionsScene);
 	}
 	
 	
