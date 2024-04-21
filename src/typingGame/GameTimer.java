@@ -17,6 +17,7 @@ public class GameTimer extends AnimationTimer {
 	private Scene gameScene;
 	private long startTime;
 	private Car car;
+	private boolean isKeyPressed = false; // Flag to indicate if a key is pressed
 	
 	// constants
 	public final static Image BG_IMG = new Image("images/concrete-floor.jpg", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false, false);
@@ -38,6 +39,7 @@ public class GameTimer extends AnimationTimer {
 		
 		// move car
 		this.moveCar();
+		
 		// re-render car
 		this.renderCar();	
 	}
@@ -45,13 +47,19 @@ public class GameTimer extends AnimationTimer {
 	
 	// render the Car on the screen
 	private void renderCar() {
+	    // Clear the canvas before rendering
+	    gc.clearRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
+	    
+	    // Draw the background image
+	    gc.drawImage(BG_IMG, 0, 0, gameScene.getWidth(), gameScene.getHeight());
+	    
 		this.car.render(this.gc);	// display change of xPos and yPos on the canvas
 	}
 	
 	
 	// move car when typing on the keyboard
 	private void moveCar() {
-		this.car.move();
+		this.car.move(isKeyPressed);
 	}
 	
 	
@@ -59,19 +67,17 @@ public class GameTimer extends AnimationTimer {
 	// TODO: <copied from previous project, needs to be revised>
 	// listens to any key press and does corresponding actions
 	private void handleKeyPressEvent() {
-//		this.gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
-//			public void handle(KeyEvent e) {
-//				// code is a value that represents the pressed key
-//				KeyCode code = e.getCode();
-//				moveMyFish(code);
-//			}
-//		});
-//
-//		this.gameScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
-//			public void handle(KeyEvent e) {
-//				KeyCode code = e.getCode();
-//				stopMyFish(code);
-//			}
-//		});
+	    gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+	        public void handle(KeyEvent e) {
+	            // Move the car when any key is pressed
+	        	 isKeyPressed = true;
+	        }
+	    });
+
+	    gameScene.setOnKeyReleased(new EventHandler<KeyEvent>() {
+	        public void handle(KeyEvent e) {
+	        	 isKeyPressed = false;
+	        }
+	    });
 	}
 }

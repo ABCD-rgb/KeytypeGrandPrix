@@ -20,9 +20,23 @@ public class Car extends Sprite {
 	}
 	
 	// TODO
-	void move() {
-		
+	void move(boolean isKeyPressed) {
+	    // Check if a key is currently pressed
+	    if (isKeyPressed) {
+	        double newX = getXPos() + speed;
+	        
+	        // Check boundaries
+	        if (newX >= 0 && newX <= Game.WINDOW_WIDTH - CAR_DIAMETER) {
+	            setXPos(newX);
+	        }
+	    }
 	}
+	
+	void stop() {
+	    // Set speed to 0 to stop the car
+	    setSpeed(0);
+	}
+
 	
 	
 	// === setters ===
