@@ -169,7 +169,8 @@ public class Game {
 		// entry point to the actual game
 		if (string.equals("game")) {
 			stage.setScene(gameScene);
-			GameTimer gameTimer = new GameTimer(gameScene, gc);
+			String textToType = "type the text displayed above test.";
+			GameTimer gameTimer = new GameTimer(gameScene, gc, textToType);
 			gameTimer.start();	// internally calls the handle() method of GameTimer
 		
 		} else if (string.equals("instructions")) {
