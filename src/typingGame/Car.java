@@ -17,6 +17,7 @@ public class Car extends Sprite {
         this.loadImage(carImg);
     }
 
+    // TODO
     void move(double targetX, double speed) {
         // Calculate the direction of movement
         double direction = Math.signum(targetX - getXPos());
@@ -34,6 +35,7 @@ public class Car extends Sprite {
         }
     }
 
+    // this is just test
     public void moveToEndOfScreen() {
         double targetX = Game.WINDOW_WIDTH - getWidth(); // Move to the end of the screen
         setXPos(targetX);

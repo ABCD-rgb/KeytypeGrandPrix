@@ -90,6 +90,7 @@ public class GameTimer extends AnimationTimer {
         gc.fillText(timerText.getText(), timerText.getX(), timerText.getY());
     }
 
+    // TODO
     private void moveCar() {
         // Calculate the position to move the car based on the completion of the current word
         double wordCompletion = (double) currentWordIndex / words.length;
@@ -99,20 +100,15 @@ public class GameTimer extends AnimationTimer {
         double distance = Math.abs(targetX - car.getXPos());
 
         // Calculate the adjusted speed based on the number of words
-        
-        
-        
-        
-        
-        
-        
-        
+        // TODO divided by something works
+        // I just did not know how to proportionally move the car that is dynamic to word count
         double adjustedSpeed = car.getSpeed() * (words.length - currentWordIndex) /0.11111;
 
         // Move the car towards the target position with adjusted speed
         car.move(targetX, adjustedSpeed);
 
         // Check if all words are typed, and move the car to the end of the screen
+        // this is just test
         if (currentWordIndex == words.length) {
             car.moveToEndOfScreen();
         }
@@ -135,7 +131,7 @@ public class GameTimer extends AnimationTimer {
                     // Check if the current word is completed
                     if (currentWord.isEmpty()) {
                         currentWordIndex++;
-                        moveCar(); // Move the car after each word is typed
+                        moveCar(); 
                     }
                 }
             }
