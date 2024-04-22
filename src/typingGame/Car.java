@@ -17,16 +17,19 @@ public class Car extends Sprite {
         this.loadImage(carImg);
     }
 
-    // TODO
-    void move(double targetX, double speed) {
+
+    void move(double targetX, double length) {
+        // Calculate the distance to move for each word
+        double distancePerWord = Game.WINDOW_WIDTH / length;
+
         // Calculate the direction of movement
         double direction = Math.signum(targetX - getXPos());
 
         // Calculate the movement distance for this frame
-        double movement = Math.min(speed, Math.abs(targetX - getXPos()));
+        double movement = direction * distancePerWord;
 
         // Move the car towards the target position
-        double newX = getXPos() + movement * direction;
+        double newX = getXPos() + movement;
 
         // Ensure that the newX is within the boundaries
         if (newX >= 0 && newX <= Game.WINDOW_WIDTH - CAR_DIAMETER) {
@@ -34,6 +37,7 @@ public class Car extends Sprite {
             setXPos(newX);
         }
     }
+
 
     // this is just test
     public void moveToEndOfScreen() {
