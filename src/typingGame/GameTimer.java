@@ -70,7 +70,6 @@ public class GameTimer extends AnimationTimer {
         this.renderCar();
         this.renderTextToType();
         this.renderTimer(remainingTime);
-        this.renderSpeedometer();
         
         // Check if all words are typed and display congrats message
         if (currentWordIndex == words.length) {
