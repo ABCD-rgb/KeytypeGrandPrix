@@ -1,6 +1,7 @@
 package typingGame;
 
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -10,73 +11,76 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.text.Text;
 
 public class GameTimer extends AnimationTimer {
     private GraphicsContext gc;
     private Scene gameScene;
+    private Stage stage;
     private long startTime;
     private Car car;
     private String textToType;
     private long gameDuration;
+    private long remainingTime;
     private Text timerText;
     private String[] words;
     private int currentWordIndex;
+    private int totalCharactersTyped;
+    private int correctCharactersTyped;
 
     // constants
     public final static Image BG_IMG = new Image("images/concrete-floor.jpg", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false, false);
 
-    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType) {
+    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage) {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
         this.car = new Car(20, Game.WINDOW_CENTER);
         this.textToType = textToType;
-        this.gameDuration = 60; // 1 minute game duration
+        this.gameDuration = 15; // 1 minute game duration
         this.timerText = new Text();
         this.timerText.setFont(Font.font("Verdana", 16));
         this.timerText.setFill(Color.WHITE);
         this.words = textToType.split("\\s+");
         this.currentWordIndex = 0;
+        this.totalCharactersTyped = 0;
+        this.correctCharactersTyped = 0;
+        this.stage = stage;
 
         // methods ran at the start of GameTimer
-//        this.createTextInputField();
         this.handleKeyPressEvent();
     }
 
     @Override
     public void handle(long currentNanoTime) {
-        long elapsedTime = currentNanoTime - startTime;
-        long remainingTime = gameDuration - elapsedTime / 1_000_000_000;
-        
-        // Check if time is up
-        if (remainingTime <= 0) {
-            stop(); // Stop the game
-            gameOver(); // Display game over message
-            return;
+    	try {
+	        long elapsedTime = currentNanoTime - startTime;
+	        remainingTime = gameDuration - elapsedTime / 1_000_000_000;
+	        
+	        // check if time is up
+	        if (remainingTime <= 0) {
+	            stop(); // Stop the game
+	            gameOverMessage(); // display game over message
+	            gameScene.setOnKeyPressed(null);
+	            handleGameOverKeyPress();
+	            return;
+	        }
+	
+	        // render background, car, text to type, and timer
+	        this.renderBackground();
+	        this.renderCar();
+	        this.renderTextToType();
+	        this.renderTimer(remainingTime);
+	        this.renderSpeedometer();
+	        
+    	} catch (Exception e) {
+            e.printStackTrace();
+            // handle the exception gracefully and ensure that the timer continues running
         }
-
-
-        // Check if time is up
-        if (remainingTime <= 0) {
-            stop(); // Stop the game
-            return;
-        }
-
-        // Render background, car, text to type, and timer
-        this.renderBackground();
-        this.renderCar();
-        this.renderTextToType();
-        this.renderTimer(remainingTime);
-        
-        // Check if all words are typed and display congrats message
-        if (currentWordIndex == words.length) {
-            congratsMessage();
-            stop(); // Stop the game
-        }
-        
     }
 
     private void renderBackground() {
@@ -88,24 +92,13 @@ public class GameTimer extends AnimationTimer {
     }
 
     private void renderCar() {
-        car.render(gc); // Render the car
-    }
-    
-    private void createTextInputField() {
-        TextField textField = new TextField();
-        textField.setLayoutX((gameScene.getWidth() - 400) / 2);
-        textField.setLayoutY(gameScene.getHeight() - 60);
-        textField.setPrefWidth(400);
-        textField.setStyle("-fx-background-color: white; -fx-background-radius: 10px;");
-        textField.setFont(new Font("Verdana", 16));
-        ((Group) gameScene.getRoot()).getChildren().add(textField);
-        textField.requestFocus();
+        car.render(gc);
     }
 
     private void renderTextToType() {
         gc.setFill(Color.web("#C7E2F5"));
-        gc.fillRoundRect(50, gameScene.getHeight() - 100, gameScene.getWidth() - 100, 80, 10, 10);
-        gc.setFont(new Font("Verdana", 20));
+        gc.fillRoundRect(50, gameScene.getHeight() - 100, gameScene.getWidth() - 100, 50, 10, 10);
+        gc.setFont(new Font("Lucida Console", 20));
         gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.CENTER);
 
@@ -114,6 +107,38 @@ public class GameTimer extends AnimationTimer {
             displayText.append(words[i]).append(" ");
         }
         gc.fillText(displayText.toString(), gameScene.getWidth() / 2, gameScene.getHeight() - 70);
+    }
+    
+    private void displayMessage(String message, Color color, int durationInMillis) {
+        Text messageText = new Text(message);
+        messageText.setFont(Font.font("Verdana", FontWeight.BOLD, 24));
+        messageText.setFill(color);
+        messageText.setVisible(true);
+        messageText.setX(gameScene.getWidth() / 2 - messageText.getLayoutBounds().getWidth() / 2);
+        messageText.setY(150);
+        ((Group) gameScene.getRoot()).getChildren().add(messageText);
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(durationInMillis);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            Platform.runLater(() -> ((Group) gameScene.getRoot()).getChildren().remove(messageText));
+        }).start();
+    }
+    
+    private void displayIncorrectKeyMessage() {
+        displayMessage("Incorrect key!", Color.web("#EF5350"), 500);
+    }
+
+    private void displayRaceCompleteMessage() {
+        displayMessage("Race Complete!", Color.web("#314528"), 5000);
+    }
+    
+    private void gameOverMessage() {
+        displayMessage("Game Over!", Color.web("#EF5350"), 5000);
+        System.out.println("Game Over! Your time is up.");
     }
 
     private void renderTimer(long remainingTime) {
@@ -127,67 +152,116 @@ public class GameTimer extends AnimationTimer {
     
     private void renderSpeedometer() {
         gc.setFill(Color.web("#FFCF11"));
-        gc.fillRoundRect(20, 20, 100, 40, 10, 10);
+        gc.fillRoundRect(20, 20, 300, 40, 10, 10);
         gc.setFont(new Font("Verdana", 16));
         gc.setFill(Color.BLACK);
-        gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText("Speed: " + car.getSpeed(), 70, 45);
+        gc.setTextAlign(TextAlignment.LEFT);
+        double wordsPerMinute = calculateWordsPerMinute();
+        double accuracy = calculateAccuracy();
+        gc.fillText(String.format("Speed: %.0f WPM | Accuracy: %.0f%%", wordsPerMinute, accuracy), 30, 45);
     }
 
     private void moveCar() {
-        // Move the car only when there are words left to type
+        // move the car only when there are words left to type
         if (currentWordIndex < words.length) {
-            // Calculate the target position for the car
+            // calculate the target position for the car
             double wordWidth = gameScene.getWidth() / words.length;
             double targetX = (currentWordIndex + 1) * wordWidth;
 
-            // Move the car to the target position
+            // move the car to the target position
             car.move(targetX, (double) words.length);
 
-            // Check if the current word is fully typed
+            // check if the current word is fully typed
             if (words[currentWordIndex].isEmpty()) {
                 currentWordIndex++; // Move to the next word
             }
         } else {
-            // If all words are typed, move the car to the end of the screen
+            // if all words are typed, move the car to the end of the screen
             car.moveToEndOfScreen();
         }
+    }
+    
+    private double calculateWordsPerMinute() {
+    	long elapsedTimeInNanos = System.nanoTime() - startTime;
+        double elapsedTimeInSeconds = elapsedTimeInNanos / 1_000_000_000.0;
+        return (double) correctCharactersTyped / 5.0 / elapsedTimeInSeconds * 60.0;
+    }
+
+    private double calculateAccuracy() {
+        if (totalCharactersTyped == 0) {
+            return 100.0;
+        }
+        return (double) correctCharactersTyped / totalCharactersTyped * 100.0;
     }
 
 
     private void handleKeyPressEvent() {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
-                char typedChar = e.getText().charAt(0);
-                String currentWord = words[currentWordIndex];
-                if (e.getCode() == KeyCode.SPACE) {
-                    // If space is pressed, move to the next word only if the current word is fully typed
-                    if (currentWord.isEmpty()) {
-                        currentWordIndex++;
-                        moveCar();
-                    }
-                } else if (!currentWord.isEmpty() && currentWord.charAt(0) == typedChar) {
-                    // Remove the first character from the current word
-                    words[currentWordIndex] = currentWord.substring(1);
-                    // Check if the current word is completed
-                    if (currentWord.isEmpty()) {
-                        currentWordIndex++;
-                        moveCar(); 
-                    }
+                if (e.getCode() == KeyCode.ESCAPE) {
+                	stop(); // stop the game timer
+                    displayMessage("Game Paused", Color.web("#343857"), 2000); // display a pause message
+                    gameScene.setOnKeyPressed(null);
+                    handlePauseKeyPress(); // attach the key event handler for pause/resume and return to main menu
+            	} else if (words.length > 0 && currentWordIndex < words.length) {
+            		char typedChar = e.getText().charAt(0);
+                    String currentWord = words[currentWordIndex];
+                    if (e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) {
+	                    // if space/enter is pressed, move to the next word only if the current word is fully typed
+	                    if (currentWord.isEmpty()) {
+	                        currentWordIndex++;
+	                        moveCar();
+	                    }
+	                } else if (!currentWord.isEmpty() && currentWord.charAt(0) == typedChar) {
+	                    // remove the first character from the current word
+	                    words[currentWordIndex] = currentWord.substring(1);
+	                    correctCharactersTyped++;
+	                    // check if the current word is completed
+	                    if (currentWord.isEmpty()) {
+	                        currentWordIndex++;
+	                        moveCar(); 
+	                    }
+	                } else {
+	                	displayIncorrectKeyMessage();
+	                }
+                }
+                
+                if (currentWordIndex == words.length) {
+                    displayRaceCompleteMessage();
+                    stop();
+                    gameScene.setOnKeyPressed(null);
+                    handleGameOverKeyPress();
                 }
             }
         });
     }
-
-
-    private void gameOver() {
-        // Display game over message
-        System.out.println("Game Over! Your time is up.");
+    
+    private void handlePauseKeyPress() {
+        gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            public void handle(KeyEvent e) {
+                if (e.getCode() == KeyCode.ENTER) {
+                    start(); // resume the game timer
+                    displayMessage("Game Resumed", Color.web("#314528"), 2000); // display a resume message
+                    handleKeyPressEvent(); // reattach the key event handler for game input
+                } else if (e.getCode() == KeyCode.ESCAPE) {
+                    // return to the main menu
+                    Game game = new Game();
+                    game.setStage(stage);
+                }
+            }
+        });
     }
-
-    private void congratsMessage() {
-        // Display congratulations message
-        System.out.println("Congratulations! You have reached the end.");
+    
+    private void handleGameOverKeyPress() {
+        gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            public void handle(KeyEvent e) {
+                if (e.getCode() == KeyCode.ESCAPE) {
+                    // return to the main menu
+                    Game game = new Game();
+                    game.setStage(stage);
+                }
+            }
+        });
     }
 
 }

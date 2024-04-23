@@ -170,7 +170,7 @@ public class Game {
 		if (string.equals("game")) {
 			stage.setScene(gameScene);
 			String textToType = "type the text because this is test test test.";
-			GameTimer gameTimer = new GameTimer(gameScene, gc, textToType);
+			GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage);
 			gameTimer.start();	// internally calls the handle() method of GameTimer
 		
 		} else if (string.equals("instructions")) {
@@ -234,7 +234,7 @@ public class Game {
 	    Label joinText = new Label("Join now and experience the thrill of a high-speed typing race!");
 	    joinText.setFont(bodyFont);
 
-	    Label returnText = new Label("Press [Enter] to return to the main menu");
+	    Label returnText = new Label("Press [ESC] to return to the main menu");
 	    returnText.setFont(bodyFont);
 
 	    content.getChildren().addAll(LOGO, instructionsHeading, introText, readyText,
@@ -246,7 +246,7 @@ public class Game {
 	    
 	    // Return to the main screen when Enter key is pressed
 	    instructionsScene.setOnKeyPressed(event -> {
-	        if (event.getCode() == KeyCode.ENTER) {
+	        if (event.getCode() == KeyCode.ESCAPE) {
 	            initMenu(stage); // Call the initMenu method to reinitialize the main menu
 	        }
 	    });
