@@ -2,8 +2,10 @@ package typingGame;
 
 import javafx.animation.AnimationTimer;
 import javafx.event.EventHandler;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
@@ -34,12 +36,13 @@ public class GameTimer extends AnimationTimer {
         this.textToType = textToType;
         this.gameDuration = 60; // 1 minute game duration
         this.timerText = new Text();
-        this.timerText.setFont(Font.font("Arial", 16));
+        this.timerText.setFont(Font.font("Verdana", 16));
         this.timerText.setFill(Color.WHITE);
         this.words = textToType.split("\\s+");
         this.currentWordIndex = 0;
 
         // methods ran at the start of GameTimer
+//        this.createTextInputField();
         this.handleKeyPressEvent();
     }
 
@@ -47,6 +50,14 @@ public class GameTimer extends AnimationTimer {
     public void handle(long currentNanoTime) {
         long elapsedTime = currentNanoTime - startTime;
         long remainingTime = gameDuration - elapsedTime / 1_000_000_000;
+        
+        // Check if time is up
+        if (remainingTime <= 0) {
+            stop(); // Stop the game
+            gameOver(); // Display game over message
+            return;
+        }
+
 
         // Check if time is up
         if (remainingTime <= 0) {
@@ -59,60 +70,91 @@ public class GameTimer extends AnimationTimer {
         this.renderCar();
         this.renderTextToType();
         this.renderTimer(remainingTime);
+        this.renderSpeedometer();
+        
+        // Check if all words are typed and display congrats message
+        if (currentWordIndex == words.length) {
+            congratsMessage();
+            stop(); // Stop the game
+        }
+        
     }
 
     private void renderBackground() {
-        gc.clearRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
-        gc.drawImage(BG_IMG, 0, 0, gameScene.getWidth(), gameScene.getHeight());
+    	gc.clearRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
+        gc.setFill(Color.web("#A6C9CB"));
+        gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
+        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
+        gc.drawImage(roadImage, 0, 0);
     }
 
     private void renderCar() {
         car.render(gc); // Render the car
     }
+    
+    private void createTextInputField() {
+        TextField textField = new TextField();
+        textField.setLayoutX((gameScene.getWidth() - 400) / 2);
+        textField.setLayoutY(gameScene.getHeight() - 60);
+        textField.setPrefWidth(400);
+        textField.setStyle("-fx-background-color: white; -fx-background-radius: 10px;");
+        textField.setFont(new Font("Verdana", 16));
+        ((Group) gameScene.getRoot()).getChildren().add(textField);
+        textField.requestFocus();
+    }
 
     private void renderTextToType() {
-        gc.setFont(new Font("Arial", 20));
-        gc.setFill(Color.WHITE);
+        gc.setFill(Color.web("#C7E2F5"));
+        gc.fillRoundRect(50, gameScene.getHeight() - 100, gameScene.getWidth() - 100, 80, 10, 10);
+        gc.setFont(new Font("Verdana", 20));
+        gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.CENTER);
-        
-        // Construct the text to display by joining remaining words
+
         StringBuilder displayText = new StringBuilder();
         for (int i = currentWordIndex; i < words.length; i++) {
             displayText.append(words[i]).append(" ");
         }
-        gc.fillText(displayText.toString(), gameScene.getWidth() / 2, 50);
+        gc.fillText(displayText.toString(), gameScene.getWidth() / 2, gameScene.getHeight() - 70);
     }
 
     private void renderTimer(long remainingTime) {
-        timerText.setText("Time: " + remainingTime + "s");
-        timerText.setX(gameScene.getWidth() - 100);
-        timerText.setY(20);
-        gc.fillText(timerText.getText(), timerText.getX(), timerText.getY());
+        gc.setFill(Color.web("#FFCF11"));
+        gc.fillRoundRect(gameScene.getWidth() - 120, 20, 100, 40, 10, 10);
+        gc.setFont(new Font("Verdana", 16));
+        gc.setFill(Color.BLACK);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("Time: " + remainingTime + "s", gameScene.getWidth() - 70, 45);
+    }
+    
+    private void renderSpeedometer() {
+        gc.setFill(Color.web("#FFCF11"));
+        gc.fillRoundRect(20, 20, 100, 40, 10, 10);
+        gc.setFont(new Font("Verdana", 16));
+        gc.setFill(Color.BLACK);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("Speed: " + car.getSpeed(), 70, 45);
     }
 
-    // TODO
     private void moveCar() {
-        // Calculate the position to move the car based on the completion of the current word
-        double wordCompletion = (double) currentWordIndex / words.length;
-        double targetX = gameScene.getWidth() * wordCompletion;
+        // Move the car only when there are words left to type
+        if (currentWordIndex < words.length) {
+            // Calculate the target position for the car
+            double wordWidth = gameScene.getWidth() / words.length;
+            double targetX = (currentWordIndex + 1) * wordWidth;
 
-        // Calculate the distance to the target position
-        double distance = Math.abs(targetX - car.getXPos());
+            // Move the car to the target position
+            car.move(targetX, (double) words.length);
 
-        // Calculate the adjusted speed based on the number of words
-        // TODO divided by something works
-        // I just did not know how to proportionally move the car that is dynamic to word count
-        double adjustedSpeed = car.getSpeed() * (words.length - currentWordIndex) /0.11111;
-
-        // Move the car towards the target position with adjusted speed
-        car.move(targetX, adjustedSpeed);
-
-        // Check if all words are typed, and move the car to the end of the screen
-        // this is just test
-        if (currentWordIndex == words.length) {
+            // Check if the current word is fully typed
+            if (words[currentWordIndex].isEmpty()) {
+                currentWordIndex++; // Move to the next word
+            }
+        } else {
+            // If all words are typed, move the car to the end of the screen
             car.moveToEndOfScreen();
         }
     }
+
 
     private void handleKeyPressEvent() {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
@@ -139,5 +181,14 @@ public class GameTimer extends AnimationTimer {
     }
 
 
+    private void gameOver() {
+        // Display game over message
+        System.out.println("Game Over! Your time is up.");
+    }
+
+    private void congratsMessage() {
+        // Display congratulations message
+        System.out.println("Congratulations! You have reached the end.");
+    }
 
 }
