@@ -8,8 +8,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -20,6 +19,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import java.net.*;
 
 // Entry point for different scenes
 
@@ -162,17 +162,12 @@ public class Game {
 	    }
 	}
 	
+	
 	// scene picker
-	protected void changeScene(Stage stage, String string) {
-		GraphicsContext gc = this.canvas.getGraphicsContext2D();
-		
+	protected void changeScene(Stage stage, String string) {	
 		// entry point to the actual game
 		if (string.equals("game")) {
-			stage.setScene(gameScene);
-			String textToType = "type the text because this is test test test.";
-			GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage);
-			gameTimer.start();	// internally calls the handle() method of GameTimer
-		
+			initChat(stage);
 		} else if (string.equals("instructions")) {
 			initInstruct(stage);
 		
@@ -258,5 +253,14 @@ public class Game {
 	// TODO: about scene
 	public void initAbout(Stage stage) {
 		
+	}
+	
+	
+	// TODO: chat scene --> chats between players who joined
+	public void initChat(Stage stage) {
+		GraphicsContext gc = this.canvas.getGraphicsContext2D();
+		ChatClient chatclient = new ChatClient(gameScene, gc, stage);
+		chatclient.joinChat();
+		chatclient.runChat();
 	}
 }
