@@ -194,39 +194,64 @@ public class GameTimer extends AnimationTimer {
         }
         return (double) correctCharactersTyped / totalCharactersTyped * 100.0;
     }
-
-
+    
     private void handleKeyPressEvent() {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
-                	stop(); // stop the game timer
+                    stop(); // stop the game timer
                     displayMessage("Game Paused", Color.web("#343857"), 2000); // display a pause message
                     gameScene.setOnKeyPressed(null);
                     handlePauseKeyPress(); // attach the key event handler for pause/resume and return to main menu
-            	} else if (words.length > 0 && currentWordIndex < words.length) {
-            		char typedChar = e.getText().charAt(0);
+                } else if (words.length > 0 && currentWordIndex < words.length) {
                     String currentWord = words[currentWordIndex];
                     if (e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) {
-	                    // if space/enter is pressed, move to the next word only if the current word is fully typed
-	                    if (currentWord.isEmpty()) {
-	                        currentWordIndex++;
-	                        moveCar();
-	                    }
-	                } else if (!currentWord.isEmpty() && currentWord.charAt(0) == typedChar) {
-	                    // remove the first character from the current word
-	                    words[currentWordIndex] = currentWord.substring(1);
-	                    correctCharactersTyped++;
-	                    // check if the current word is completed
-	                    if (currentWord.isEmpty()) {
-	                        currentWordIndex++;
-	                        moveCar(); 
-	                    }
-	                } else {
-	                	displayIncorrectKeyMessage();
-	                }
+                        // if space/enter is pressed, move to the next word only if the current word is fully typed
+                        if (currentWord.isEmpty()) {
+                            currentWordIndex++;
+                            moveCar();
+                        }
+                    } else if (!currentWord.isEmpty()) {
+                        char typedChar;
+                        if (e.getCode() == KeyCode.CAPS) {
+                            // check if Caps Lock is pressed
+                            String text = e.getText();
+                            if (!text.isEmpty()) {
+                                typedChar = text.toUpperCase().charAt(0);
+                            } else {
+                                System.out.println("Caps Lock key pressed");
+                                return; // ignore if Caps Lock was pressed and e.getText() returns empty string
+                            }
+                        } else if (e.getCode() == KeyCode.SHIFT) {
+                            // check if Shift key is pressed
+                            String text = e.getText();
+                            if (!text.isEmpty()) {
+                                typedChar = text.charAt(0);
+                            } else {
+                                System.out.println("Shift key pressed");
+                                return; // ignore if Shift key was pressed and e.getText() returns empty string
+                            }
+                        } else if (e.getCode() == KeyCode.CONTROL) {
+                            // ignore if Control key is pressed
+                            return;
+                        } else {
+                            typedChar = e.getText().charAt(0);
+                        }
+                        if (currentWord.charAt(0) == typedChar) {
+                            // remove the first character from the current word
+                            words[currentWordIndex] = currentWord.substring(1);
+                            correctCharactersTyped++;
+                            // check if the current word is completed
+                            if (currentWord.isEmpty()) {
+                                currentWordIndex++;
+                                moveCar();
+                            }
+                        } else {
+                            displayIncorrectKeyMessage();
+                        }
+                    }
                 }
-                
+
                 if (currentWordIndex == words.length) {
                     displayRaceCompleteMessage();
                     stop();
@@ -236,7 +261,7 @@ public class GameTimer extends AnimationTimer {
             }
         });
     }
-    
+
     private void handlePauseKeyPress() {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
