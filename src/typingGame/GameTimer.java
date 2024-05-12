@@ -10,6 +10,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
@@ -256,12 +257,48 @@ public class GameTimer extends AnimationTimer {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
-                    // return to the main menu
+                    // Return to the main menu
                     Game game = new Game();
                     game.setStage(stage);
                 }
             }
         });
+
+        // TODO: RANK based on player's rank (1st,2nd,3rd,etc.)
+        // display game over popup with stats
+        String gameOverStats = String.format("Time Elapsed: %d seconds\nWords Per Minute: %.2f", gameDuration - remainingTime, calculateWordsPerMinute());
+        displayGameOverPopup(gameOverStats);
     }
+
+    private void displayGameOverPopup(String gameOverStats) {
+        // group to hold the popup elements
+        Group popupGroup = new Group();
+
+        // background element
+        Rectangle background = new Rectangle(gameScene.getWidth(), gameScene.getHeight(), Color.rgb(0, 0, 0, 0.7));
+        popupGroup.getChildren().add(background);
+
+        // text to display game over stats
+        Text statsText = new Text(gameOverStats);
+        statsText.setFont(Font.font("Verdana", FontWeight.BOLD, 24));
+        statsText.setFill(Color.WHITE);
+        statsText.setTextAlignment(TextAlignment.CENTER);
+        statsText.setLayoutX((gameScene.getWidth() - statsText.getLayoutBounds().getWidth()) / 2);
+        statsText.setLayoutY((gameScene.getHeight() - statsText.getLayoutBounds().getHeight()) / 2);
+        popupGroup.getChildren().add(statsText);
+
+        // text for user to return to main menu
+        Text returnText = new Text("Press Esc to return to main menu");
+        returnText.setFont(Font.font("Verdana", 16));
+        returnText.setFill(Color.WHITE);
+        returnText.setTextAlignment(TextAlignment.CENTER);
+        returnText.setLayoutX((gameScene.getWidth() - returnText.getLayoutBounds().getWidth()) / 2);
+        returnText.setLayoutY(statsText.getLayoutY() + statsText.getLayoutBounds().getHeight() + 20);
+        popupGroup.getChildren().add(returnText);
+
+        // adds the popup group to the game scene
+        ((Group) gameScene.getRoot()).getChildren().add(popupGroup);
+    }
+
 
 }
