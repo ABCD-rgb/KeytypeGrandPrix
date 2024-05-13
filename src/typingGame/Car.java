@@ -4,7 +4,6 @@ import javafx.scene.image.Image;
 
 public class Car extends Sprite {
     protected double speed;
-//	private int yPos;
 	
     // constants
     protected final static int CAR_WIDTH = 55;
@@ -17,28 +16,25 @@ public class Car extends Sprite {
         this.speed = Car.CAR_SPEED;
         Image carImg = new Image(Car.CAR_IMG, Car.CAR_WIDTH, Car.CAR_HEIGHT, false, false);
         this.loadImage(carImg);
-        
-        // Adjust the y-position of the car to align with the road
-//        this.yPos = Game.WINDOW_HEIGHT - 100; // Adjust the value as needed
     }
 
 
     void move(double targetX, double length) {
-        // Calculate the distance to move for each word
+        // calculate the distance to move for each word
         double distancePerWord = Game.WINDOW_WIDTH / length;
 
-        // Calculate the direction of movement
+        // calculate the direction of movement
         double direction = Math.signum(targetX - getXPos());
 
-        // Calculate the movement distance for this frame
+        // calculate the movement distance for this frame
         double movement = direction * distancePerWord;
 
-        // Move the car towards the target position
+        // move the car towards the target position
         double newX = getXPos() + movement;
 
-        // Ensure that the newX is within the boundaries
+        // ensure that the newX is within the boundaries
         if (newX >= 0 && newX <= Game.WINDOW_WIDTH - CAR_WIDTH) {
-            // Set the new position
+            // set the new position
             setXPos(newX);
         }
     }
@@ -46,7 +42,7 @@ public class Car extends Sprite {
 
     // this is just test
     public void moveToEndOfScreen() {
-        double targetX = Game.WINDOW_WIDTH - getWidth(); // Move to the end of the screen
+        double targetX = Game.WINDOW_WIDTH - getWidth(); // move to the end of the screen
         setXPos(targetX);
     }
 
