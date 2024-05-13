@@ -7,11 +7,13 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ChatServer {
-	private static final int PORT = 8000;
-	private static byte[] incoming = new byte[265];
-	private static int readyClients = 0;
+	private static final int PORT = 8000;	// port number for the server socket
+	private static byte[] incoming = new byte[265];	// byte array to store incoming data
+	private static int readyClients = 0;	// number of clients that are ready
+	private static List<String> previousChats = new ArrayList<>();	// list to store previous chats
 	
 	// connect the server socket to a specific port
 	private static DatagramSocket socket;	
@@ -19,11 +21,12 @@ public class ChatServer {
 		try {
 			socket = new DatagramSocket(PORT);
 		} catch (SocketException e) {
-			
+			// if the port is already in use
+			throw new RuntimeException(e);			
 		}
 	}
 	
-	private static ArrayList<Integer> players = new ArrayList<>();
+	private static ArrayList<Integer> players = new ArrayList<>();	// list to store the players' port numbers
 	
 	// set address of the server
     private static final InetAddress address;
@@ -41,7 +44,7 @@ public class ChatServer {
     	while (true) {
     		DatagramPacket packet = new DatagramPacket(incoming, incoming.length); // prepare packet
     		try {
-    			socket.receive(packet);
+    			socket.receive(packet);	// receive packet
     		} catch (IOException e) {
     			throw new RuntimeException(e);
     		}
@@ -51,18 +54,69 @@ public class ChatServer {
     		
     		// when player just joined the server
     		if (message.contains("init;")) {
-    			players.add(packet.getPort());
+    		    int userPort = packet.getPort(); // get the port number of the player
+    		    players.add(userPort);	// add the player to the list
+    		    String enterMessage = message.split(";")[1] + " has entered the waiting room.";
+    		    byte[] enterBytes = enterMessage.getBytes();
+    		    
+    		    // forward the enter message to all other players
+    		    for (int forward_port : players) {
+    		        if (forward_port != userPort) {
+    		            DatagramPacket enterPacket = new DatagramPacket(enterBytes, enterBytes.length, packet.getAddress(), forward_port);
+    		            try {
+    		                socket.send(enterPacket);
+    		            } catch (IOException e) {
+    		                throw new RuntimeException(e);
+    		            }
+    		        }
+    		    }
+    		    previousChats.add(enterMessage); // store the enter message in the list
     		}
+    		
     		// when player sent a message to the server
     		else {
     			int userPort = packet.getPort();
-//    		    InetAddress userAddress = packet.getAddress(); // get the address of the client who sent the message
     		    byte[] byteMessage = message.getBytes();
     			
-    		    if (message.endsWith(" is ready")) {
+    		    // when player wants to fetch previous chats
+    		    if (message.startsWith("fetch:")) {
+    		        String identifier = message.substring(6);
+    		        String fetchResponse = "fetchResponse:";
+    		        
+    		        // concatenate previous chats and messages
+    		        for (String chat : previousChats) {
+    		            fetchResponse += chat + "|";
+    		        }
+    		        
+    		        byte[] fetchBytes = fetchResponse.getBytes();
+    		        DatagramPacket fetchPacket = new DatagramPacket(fetchBytes, fetchBytes.length, packet.getAddress(), userPort);
+    		        try {
+    		            socket.send(fetchPacket);
+    		        } catch (IOException e) {
+    		            throw new RuntimeException(e);
+    		        }
+    		    } else if (message.endsWith(" has entered the waiting room.")) {
+    		        if (!previousChats.contains(message)) {
+    		            byte[] enterBytes = message.getBytes();
+    		            
+    		            // forward the enter message to all other players
+    		            for (int forward_port : players) {
+    		                if (forward_port != userPort) {
+    		                    DatagramPacket enterPacket = new DatagramPacket(enterBytes, enterBytes.length, packet.getAddress(), forward_port);
+    		                    try {
+    		                        socket.send(enterPacket);
+    		                    } catch (IOException e) {
+    		                        throw new RuntimeException(e);
+    		                    }
+    		                }
+    		            }
+    		            previousChats.add(message); // store the enter message in the list
+    		        }
+    		    } else if (message.endsWith(" is ready")) {
     		        readyClients++;
     		        byte[] readyBytes = message.getBytes();
     		        
+    		        // forward the ready message to all other players
     		        for (int forward_port : players) {
     		            if (forward_port != userPort) {
     		                DatagramPacket readyPacket = new DatagramPacket(readyBytes, readyBytes.length, packet.getAddress(), forward_port);
@@ -86,6 +140,8 @@ public class ChatServer {
     		                }
     		            }
     		        }
+    		        
+    		        previousChats.add(message); // store the ready message in the list
     		    } else {
     		    	// forward to all other players (except the one who sent the message)
         		    for (int forward_port : players) {
@@ -98,6 +154,8 @@ public class ChatServer {
         		            }
         		        }
         		    }
+        		    
+        		    previousChats.add(message); // store the regular chat message in the list
     		    }    		    
     		}
     	}

@@ -12,17 +12,21 @@ import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.geometry.Insets;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+//import javafx.geometry.Insets;
+//import javafx.scene.paint.Color;
+//import javafx.scene.shape.Rectangle;
+
 import java.net.*;
+import java.util.Optional;
 
-// Entry point for different scenes
-
+// entry point for different scenes
 public class Game {
 	private Stage stage;
 	private Scene menuScene;	// main menu screen
@@ -40,12 +44,12 @@ public class Game {
 	public final static int WINDOW_CENTER = WINDOW_WIDTH / 2;
 	public final static Image BG_IMG = new Image("images/welcome_bg.png", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false);
 	public final static ImageView LOGO = new ImageView(new Image("images/logo.png"));
-//	public final static ImageView LOGO_SMALL = new ImageView(new Image("images/logo.png"));
 	public final static Image WINDOWLOGO = new Image("images/window_logo.png");
 
 	public Game() {
 		this.canvas = new Canvas(Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
 		this.root = new Group();
+		
 		// canvas is showing at the root
 		this.root.getChildren().add(this.canvas);
 		this.gameScene = new Scene(this.root);
@@ -73,7 +77,6 @@ public class Game {
 		Canvas canvas = new Canvas(Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
 		GraphicsContext gc = canvas.getGraphicsContext2D();
 		
-		// Image bg = new Image("images/concrete-floor.png", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false);
 		gc.drawImage(BG_IMG, 0, 0);
 		
 		// display buttons: "new game", "instructions", "about"
@@ -102,7 +105,7 @@ public class Game {
         b2 = new Button("Instructions");
         b3 = new Button("About");
 
-		Font font = Font.font("Verdana", FontWeight.BOLD, 25); // yung 30 here is yung size kaya malaki yung button sa display
+		Font font = Font.font("Verdana", FontWeight.BOLD, 25);
 		b1.setFont(font);
 		b2.setFont(font);
 		b3.setFont(font);
@@ -207,7 +210,7 @@ public class Game {
 	    instructionsBox.setSpacing(10);
 	    instructionsBox.setPadding(new Insets(20));
 	    instructionsBox.setStyle("-fx-background-color: white; -fx-background-radius: 10px;");
-	    instructionsBox.setMaxWidth(600); // Set a maximum width for the instructions box
+	    instructionsBox.setMaxWidth(600);
 
 	    Label instruction1 = new Label("• Watch as the text appears on your screen");
 	    instruction1.setFont(bodyFont);
@@ -239,10 +242,10 @@ public class Game {
 
 	    Scene instructionsScene = new Scene(root, 800, 600);
 	    
-	    // Return to the main screen when Enter key is pressed
+	    // return to the main screen when Enter key is pressed
 	    instructionsScene.setOnKeyPressed(event -> {
 	        if (event.getCode() == KeyCode.ESCAPE) {
-	            initMenu(stage); // Call the initMenu method to reinitialize the main menu
+	            initMenu(stage); // call the initMenu method to reinitialize the main menu
 	        }
 	    });
 	    
@@ -256,11 +259,107 @@ public class Game {
 	}
 	
 	
-	// TODO: chat scene --> chats between players who joined
+	// TODO: chat scene --> chats between players who joined	
 	public void initChat(Stage stage) {
-		GraphicsContext gc = this.canvas.getGraphicsContext2D();
-		ChatClient chatclient = new ChatClient(gameScene, gc, stage);
-//		chatclient.joinChat();
-		chatclient.runChat();
+	    StackPane root = new StackPane();
+	    root.setStyle("-fx-background-color: #A6C9CB;");
+
+	    VBox content = new VBox();
+	    content.setAlignment(Pos.CENTER);
+	    content.setSpacing(15);
+
+	    ImageView logo = new ImageView(new Image("images/logo.png"));
+	    logo.setFitWidth(600);
+	    logo.setFitHeight(200);
+
+	    Font buttonFont = Font.font("Verdana", FontWeight.BOLD, 25);
+
+	    Button trainingModeButton = new Button("Training Mode");
+	    trainingModeButton.setFont(buttonFont);
+	    trainingModeButton.setStyle("-fx-background-radius: 15px; -fx-text-fill: #314528; -fx-background-color: #9BE86B; -fx-border-color:#314528; -fx-border-radius: 15px; -fx-border-width: 5px");
+	    trainingModeButton.setOnMousePressed(event -> darkenButton(trainingModeButton));
+	    trainingModeButton.setOnMouseReleased(event -> resetButtonStyle(trainingModeButton));
+	    trainingModeButton.setOnAction(event -> startTrainingMode(stage));
+
+	    Button raceModeButton = new Button("Race Mode");
+	    raceModeButton.setFont(buttonFont);
+	    raceModeButton.setStyle("-fx-background-radius: 15px; -fx-text-fill: #343857; -fx-background-color: #A2D9FF; -fx-border-color:#343857; -fx-border-radius: 15px; -fx-border-width: 5px");
+	    raceModeButton.setOnMousePressed(event -> darkenButton(raceModeButton));
+	    raceModeButton.setOnMouseReleased(event -> resetButtonStyle(raceModeButton));
+
+	    HBox usernameBox = new HBox();
+	    usernameBox.setAlignment(Pos.CENTER);
+	    usernameBox.setSpacing(10);
+	    usernameBox.setVisible(false);
+	    usernameBox.setStyle("-fx-background-color: #C7E2F5; -fx-background-radius: 10px; -fx-padding: 40px 1px;");
+	    usernameBox.setMaxWidth(400); // set a maximum width for the username box
+
+	    TextField usernameField = new TextField();
+	    usernameField.setPromptText("Enter your username");
+	    usernameField.setStyle("-fx-background-radius: 20px; -fx-pref-width: 200px;");
+	    usernameField.setOnAction(event -> {
+	        String username = usernameField.getText().trim();
+	        if (!username.isEmpty()) {
+	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
+	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            chatClient.runChat();
+	        }
+	    });
+
+	    Button enterButton = new Button("Enter");
+	    enterButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+	    enterButton.setOnAction(event -> {
+	        String username = usernameField.getText().trim();
+	        if (!username.isEmpty()) {
+	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
+	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            chatClient.runChat();
+	        }
+	    });
+
+	    usernameBox.getChildren().addAll(usernameField, enterButton);
+
+	    raceModeButton.setOnAction(event -> {
+	        usernameBox.setVisible(true);
+	    });
+	    
+	    Label returnLabel = new Label("Press [ESC] to return to the main menu");
+	    returnLabel.setFont(Font.font("Verdana", 16));
+	    VBox.setMargin(returnLabel, new Insets(0, 0, -20, 0));
+
+	    content.getChildren().addAll(logo, trainingModeButton, raceModeButton, usernameBox, returnLabel);
+
+	    root.getChildren().add(content);
+
+	    Scene chatScene = new Scene(root, 800, 600);
+	    chatScene.setOnKeyPressed(event -> {
+	        if (event.getCode() == KeyCode.ESCAPE) {
+	            initMenu(stage);
+	        }
+	    });
+	    
+	    stage.setScene(chatScene);
+	}
+	
+	private void startTrainingMode(Stage stage) {
+	    GraphicsContext gc = this.canvas.getGraphicsContext2D();
+	    String textToType = "type the text because this is test test test.";
+	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage);
+	    stage.setScene(gameScene);
+	    gameTimer.start();
+	}
+	
+	private void startRaceMode(Stage stage) {
+	    TextInputDialog dialog = new TextInputDialog();
+	    dialog.setTitle("Enter Username");
+	    dialog.setHeaderText(null);
+	    dialog.setContentText("Please enter your username:");
+
+	    Optional<String> result = dialog.showAndWait();
+	    result.ifPresent(username -> {
+	        GraphicsContext gc = this.canvas.getGraphicsContext2D();
+	        ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	        chatClient.runChat();
+	    });
 	}
 }

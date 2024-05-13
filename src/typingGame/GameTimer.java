@@ -6,7 +6,6 @@ import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
@@ -17,6 +16,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.text.Text;
+//import javafx.scene.control.TextField;
 
 public class GameTimer extends AnimationTimer {
     private GraphicsContext gc;
@@ -40,9 +40,9 @@ public class GameTimer extends AnimationTimer {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
-        this.car = new Car(20, Game.WINDOW_HEIGHT - 293); // Adjust the y-position as needed
+        this.car = new Car(20, Game.WINDOW_HEIGHT - 293); // adjust the y-position as needed
         this.textToType = textToType;
-        this.gameDuration = 15; // 1 minute game duration
+        this.gameDuration = 15;
         this.timerText = new Text();
         this.timerText.setFont(Font.font("Verdana", 16));
         this.timerText.setFill(Color.WHITE);
@@ -285,7 +285,7 @@ public class GameTimer extends AnimationTimer {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
-                    // Return to the main menu
+                    // return to the main menu
                     Game game = new Game();
                     game.setStage(stage);
                 }

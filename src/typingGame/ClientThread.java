@@ -1,12 +1,7 @@
 package typingGame;
 
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -15,13 +10,18 @@ import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+//import javafx.geometry.Pos;
+//import javafx.scene.control.Label;
+//import javafx.scene.layout.HBox;
+//import javafx.scene.control.TextArea;
+//import javafx.scene.control.TextField;
 
 public class ClientThread extends Thread {
 
-    private DatagramSocket socket;
-    private byte[] incoming = new byte[256];
-    private VBox messageBox;
-    private ChatClient chatClient;
+    private DatagramSocket socket;	// socket to send and receive data
+    private byte[] incoming = new byte[256];	// byte array to store incoming data
+    private VBox messageBox;	// message box to display chat messages
+    private ChatClient chatClient;	// chat client object
     
     public ClientThread(DatagramSocket socket, VBox messageBox, ChatClient chatClient) {
         this.socket = socket;
@@ -35,36 +35,50 @@ public class ClientThread extends Thread {
         while (true) {
             DatagramPacket packet = new DatagramPacket(incoming, incoming.length);
             try {
-                socket.receive(packet);
+                socket.receive(packet);	// receive packet
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
             String receivedMessage = new String(packet.getData(), 0, packet.getLength());
+            
+            // handle different types of messages
             if (receivedMessage.equals("startGame")) {
                 Platform.runLater(() -> {
-                	chatClient.handleStartGameMessage();
+                    chatClient.handleStartGameMessage();	// call the method to start the game
                 });
-            } else if (receivedMessage.endsWith(" is ready")) {
-                String senderName = receivedMessage.substring(0, receivedMessage.length() - 9);
+            } else if (receivedMessage.startsWith("fetchResponse:")) {	// handle fetch response with chat history
+                String[] messages = receivedMessage.substring(14).split("\\|");
                 Platform.runLater(() -> {
-                    chatClient.displayReadyMessage(senderName);
+                    for (String message : messages) {
+                        if (message.endsWith(" has entered the waiting room.")) {
+                            String senderName = message.substring(0, message.length() - 30);
+                            chatClient.displayEnterMessage(senderName);	// display enter message
+                        } else if (message.endsWith(" is ready")) {
+                            String senderName = message.substring(0, message.length() - 9);
+                            chatClient.displayReadyMessage(senderName);	// display ready message
+                        }
+                    }
                 });
-            } else {
-            	String[] parts = receivedMessage.split(": ");
-                String senderName = parts[0];
-                String message = parts[1];
+            } else {	// handle regular chat messages
+                String[] parts = receivedMessage.split(": ");
+                if (parts.length == 2) {
+                    String senderName = parts[0];
+                    String chatMessage = parts[1];
 
-                // create a message bubble for the received message
-                TextFlow messageBubble = createMessageBubble(message, false, senderName);
-                
-                // update the message box on the JavaFX Application Thread
-                Platform.runLater(() -> {
-                    messageBox.getChildren().add(messageBubble);
-                });
-            }            
+                    // create a message bubble for the received message
+                    TextFlow messageBubble = createMessageBubble(chatMessage, false, senderName);
+                    
+                    // update the message box on the JavaFX Application Thread
+                    Platform.runLater(() -> {
+                        messageBox.getChildren().add(messageBubble);
+                    });
+                }
+            }
         }
     }
-    
+       
+    // create a message bubble with the given message, sender name, and style
     private TextFlow createMessageBubble(String message, boolean isMyMessage, String senderName) {
         TextFlow messageBubble = new TextFlow();
         messageBubble.setMaxWidth(300);
@@ -92,3 +106,60 @@ public class ClientThread extends Thread {
         return messageBubble;
     }
 }
+
+//public void run() {
+//System.out.println("starting thread");
+//while (true) {
+//  DatagramPacket packet = new DatagramPacket(incoming, incoming.length);
+//  try {
+//      socket.receive(packet);
+//  } catch (IOException e) {
+//      throw new RuntimeException(e);
+//  }
+//  
+//  String receivedMessage = new String(packet.getData(), 0, packet.getLength());
+//  if (receivedMessage.equals("startGame")) {
+//      Platform.runLater(() -> {
+//          chatClient.handleStartGameMessage();
+//      });
+//  } else if (receivedMessage.startsWith("fetchResponse:")) {
+//      String[] messages = receivedMessage.substring(14).split("\\|");
+//      Platform.runLater(() -> {
+//          for (String message : messages) {
+//              if (message.endsWith(" has entered the waiting room.")) {
+//                  String senderName = message.substring(0, message.length() - 30);
+//                  chatClient.displayEnterMessage(senderName);
+//              } else if (message.endsWith(" is ready")) {
+//                  String senderName = message.substring(0, message.length() - 9);
+//                  chatClient.displayReadyMessage(senderName);
+//              } else {
+//                  // Handle regular chat messages
+//                  // ...
+//              }
+//          }
+//      });
+//  } else if (receivedMessage.endsWith(" is ready")) {
+//      String senderName = receivedMessage.substring(0, receivedMessage.length() - 9);
+//      Platform.runLater(() -> {
+//          chatClient.displayReadyMessage(senderName);
+//      });
+//  } else if (receivedMessage.endsWith(" has entered the waiting room.")) {
+//      String senderName = receivedMessage.substring(0, receivedMessage.length() - 30);
+//      Platform.runLater(() -> {
+//          chatClient.displayEnterMessage(senderName);
+//      });
+//  } else {
+//  	String[] parts = receivedMessage.split(": ");
+//      String senderName = parts[0];
+//      String message = parts[1];
+//
+//      // create a message bubble for the received message
+//      TextFlow messageBubble = createMessageBubble(message, false, senderName);
+//      
+//      // update the message box on the JavaFX Application Thread
+//      Platform.runLater(() -> {
+//          messageBox.getChildren().add(messageBubble);
+//      });
+//  }            
+//}
+//}
