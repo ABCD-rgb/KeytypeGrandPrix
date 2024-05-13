@@ -21,10 +21,12 @@ public class ClientThread extends Thread {
     private DatagramSocket socket;
     private byte[] incoming = new byte[256];
     private VBox messageBox;
-
-    public ClientThread(DatagramSocket socket, VBox messageBox) {
+    private ChatClient chatClient;
+    
+    public ClientThread(DatagramSocket socket, VBox messageBox, ChatClient chatClient) {
         this.socket = socket;
         this.messageBox = messageBox;
+        this.chatClient = chatClient;
     }
 
     @Override    
@@ -38,17 +40,28 @@ public class ClientThread extends Thread {
                 throw new RuntimeException(e);
             }
             String receivedMessage = new String(packet.getData(), 0, packet.getLength());
-            String[] parts = receivedMessage.split(": ");
-            String senderName = parts[0];
-            String message = parts[1];
+            if (receivedMessage.equals("startGame")) {
+                Platform.runLater(() -> {
+                	chatClient.handleStartGameMessage();
+                });
+            } else if (receivedMessage.endsWith(" is ready")) {
+                String senderName = receivedMessage.substring(0, receivedMessage.length() - 9);
+                Platform.runLater(() -> {
+                    chatClient.displayReadyMessage(senderName);
+                });
+            } else {
+            	String[] parts = receivedMessage.split(": ");
+                String senderName = parts[0];
+                String message = parts[1];
 
-            // create a message bubble for the received message
-            TextFlow messageBubble = createMessageBubble(message, false, senderName);
-            
-            // update the message box on the JavaFX Application Thread
-            Platform.runLater(() -> {
-                messageBox.getChildren().add(messageBubble);
-            });
+                // create a message bubble for the received message
+                TextFlow messageBubble = createMessageBubble(message, false, senderName);
+                
+                // update the message box on the JavaFX Application Thread
+                Platform.runLater(() -> {
+                    messageBox.getChildren().add(messageBubble);
+                });
+            }            
         }
     }
     

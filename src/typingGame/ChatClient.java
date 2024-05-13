@@ -10,8 +10,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.scene.layout.VBox;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.BorderPane;
@@ -87,7 +89,7 @@ public class ChatClient {
         messageBox.setPadding(new Insets(10));
         
         // thread for receiving messages
-        ClientThread clientThread = new ClientThread(socket, messageBox);
+        ClientThread clientThread = new ClientThread(socket, messageBox, this);
         clientThread.start();
 
         // send initialization message to the server
@@ -125,10 +127,19 @@ public class ChatClient {
         Button startButton = new Button("START GAME");
         startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
         startButton.setOnAction(e -> {
-            stage.setScene(gameScene);
-            String textToType = "type the text because this is test test test.";
-            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage);
-            gameTimer.start();    // internally calls the handle() method of GameTimer
+            startButton.setDisable(true);
+            startButton.setStyle("-fx-background-color: #A9A9A9; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+            
+            String message = identifier + " is ready";
+            byte[] msg = message.getBytes();
+            DatagramPacket send = new DatagramPacket(msg, msg.length, address, SERVER_PORT);
+            try {
+                socket.send(send);
+            } catch (IOException err) {
+                throw new RuntimeException(err);
+            }
+            
+            displayReadyMessage(identifier);
         });
 
         // create a horizontal box for the input box and send button
@@ -143,6 +154,27 @@ public class ChatClient {
 
         Scene chatScene = new Scene(root, 800, 600);
         stage.setScene(chatScene);
+    }
+    
+    public void handleStartGameMessage() {
+        Platform.runLater(() -> {
+            stage.setScene(gameScene);
+            String textToType = "type the text because this is test test test.";
+            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage);
+            gameTimer.start();
+        });
+    }
+    
+    public void displayReadyMessage(String userName) {
+        Text readyText = new Text(userName + " is ready.");
+        readyText.setFill(Color.GREEN);
+        readyText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        
+        TextFlow readyMessage = new TextFlow(readyText);
+        readyMessage.setTextAlignment(TextAlignment.CENTER);
+        
+        VBox.setMargin(readyMessage, new Insets(10));
+        messageBox.getChildren().add(readyMessage);
     }
     
     private void sendMessage() {
@@ -190,7 +222,7 @@ public class ChatClient {
 
         return messageBubble;
     }
-    
+        
 }
 
 //import javafx.scene.Scene;

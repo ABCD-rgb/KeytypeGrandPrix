@@ -10,8 +10,8 @@ import java.util.ArrayList;
 
 public class ChatServer {
 	private static final int PORT = 8000;
-	
 	private static byte[] incoming = new byte[265];
+	private static int readyClients = 0;
 	
 	// connect the server socket to a specific port
 	private static DatagramSocket socket;	
@@ -59,17 +59,46 @@ public class ChatServer {
 //    		    InetAddress userAddress = packet.getAddress(); // get the address of the client who sent the message
     		    byte[] byteMessage = message.getBytes();
     			
-    		    // forward to all other players (except the one who sent the message)
-    		    for (int forward_port : players) {
-    		        if (forward_port != userPort) {
-    		            DatagramPacket forward = new DatagramPacket(byteMessage, byteMessage.length, address, forward_port);
-    		            try {
-    		                socket.send(forward);
-    		            } catch (IOException e) {
-    		                throw new RuntimeException(e);
+    		    if (message.endsWith(" is ready")) {
+    		        readyClients++;
+    		        byte[] readyBytes = message.getBytes();
+    		        
+    		        for (int forward_port : players) {
+    		            if (forward_port != userPort) {
+    		                DatagramPacket readyPacket = new DatagramPacket(readyBytes, readyBytes.length, packet.getAddress(), forward_port);
+    		                try {
+    		                    socket.send(readyPacket);
+    		                } catch (IOException e) {
+    		                    throw new RuntimeException(e);
+    		                }
     		            }
     		        }
-    		    }
+    		        
+    		        if (readyClients == players.size()) {
+    		            // all clients are ready, send "startGame" message to all clients
+    		            byte[] startMessage = "startGame".getBytes();
+    		            for (int forward_port : players) {
+    		                DatagramPacket startPacket = new DatagramPacket(startMessage, startMessage.length, packet.getAddress(), forward_port);
+    		                try {
+    		                    socket.send(startPacket);
+    		                } catch (IOException e) {
+    		                    throw new RuntimeException(e);
+    		                }
+    		            }
+    		        }
+    		    } else {
+    		    	// forward to all other players (except the one who sent the message)
+        		    for (int forward_port : players) {
+        		        if (forward_port != userPort) {
+        		            DatagramPacket forward = new DatagramPacket(byteMessage, byteMessage.length, address, forward_port);
+        		            try {
+        		                socket.send(forward);
+        		            } catch (IOException e) {
+        		                throw new RuntimeException(e);
+        		            }
+        		        }
+        		    }
+    		    }    		    
     		}
     	}
     }
