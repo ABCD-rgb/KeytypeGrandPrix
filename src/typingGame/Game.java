@@ -260,7 +260,7 @@ public class Game {
 	public void initChat(Stage stage) {
 		GraphicsContext gc = this.canvas.getGraphicsContext2D();
 		ChatClient chatclient = new ChatClient(gameScene, gc, stage);
-		chatclient.joinChat();
+//		chatclient.joinChat();
 		chatclient.runChat();
 	}
 }

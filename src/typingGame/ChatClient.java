@@ -42,7 +42,7 @@ public class ChatClient {
         }
     }
 
-    private static final String identifier = "Adam";
+    private static final String identifier = "Alan";
 
     private static final int SERVER_PORT = 8000; // send to server
 
@@ -61,21 +61,20 @@ public class ChatClient {
     	this.stage = stage;
     }
     
-    
-    public void joinChat() {
-        // thread for receiving messages
-        ClientThread clientThread = new ClientThread(socket, messageBox);
-        clientThread.start();
-
-        // send initialization message to the server
-        byte[] uuid = ("init;" + identifier).getBytes();
-        DatagramPacket initialize = new DatagramPacket(uuid, uuid.length, address, SERVER_PORT);
-        try {        	
-        	socket.send(initialize);
-        } catch (IOException err) {
-        	throw new RuntimeException(err);
-        }
-    }
+    //    public void joinChat() {
+//        // thread for receiving messages
+//        ClientThread clientThread = new ClientThread(socket, messageBox);
+//        clientThread.start();
+//
+//        // send initialization message to the server
+//        byte[] uuid = ("init;" + identifier).getBytes();
+//        DatagramPacket initialize = new DatagramPacket(uuid, uuid.length, address, SERVER_PORT);
+//        try {        	
+//        	socket.send(initialize);
+//        } catch (IOException err) {
+//        	throw new RuntimeException(err);
+//        }
+//    }
     
     public void runChat() {
         BorderPane root = new BorderPane();
@@ -86,6 +85,19 @@ public class ChatClient {
         messageBox = new VBox(10);
         messageBox.setStyle("-fx-background-color: #A6C9CB;");
         messageBox.setPadding(new Insets(10));
+        
+        // thread for receiving messages
+        ClientThread clientThread = new ClientThread(socket, messageBox);
+        clientThread.start();
+
+        // send initialization message to the server
+        byte[] uuid = ("init;" + identifier).getBytes();
+        DatagramPacket initialize = new DatagramPacket(uuid, uuid.length, address, SERVER_PORT);
+        try {
+            socket.send(initialize);
+        } catch (IOException err) {
+            throw new RuntimeException(err);
+        }
         
         // create a ScrollPane to make the message area scrollable
         ScrollPane scrollPane = new ScrollPane(messageBox);

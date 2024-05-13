@@ -56,19 +56,20 @@ public class ChatServer {
     		// when player sent a message to the server
     		else {
     			int userPort = packet.getPort();
-    			byte[] byteMessage = message.getBytes();
+//    		    InetAddress userAddress = packet.getAddress(); // get the address of the client who sent the message
+    		    byte[] byteMessage = message.getBytes();
     			
-    			// forward to all other players (except the one who sent the message)
-    			for (int forward_port : players) {
-                    if (forward_port != userPort) {
-                        DatagramPacket forward = new DatagramPacket(byteMessage, byteMessage.length, address, forward_port);
-                        try {
-                            socket.send(forward);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-    			}
+    		    // forward to all other players (except the one who sent the message)
+    		    for (int forward_port : players) {
+    		        if (forward_port != userPort) {
+    		            DatagramPacket forward = new DatagramPacket(byteMessage, byteMessage.length, address, forward_port);
+    		            try {
+    		                socket.send(forward);
+    		            } catch (IOException e) {
+    		                throw new RuntimeException(e);
+    		            }
+    		        }
+    		    }
     		}
     	}
     }
