@@ -5,6 +5,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.io.IOException;
@@ -71,21 +72,16 @@ public class ChatClient {
     	Button sendButton = new Button("Send");
 	    Button startButton = new Button("Start Game");
     	VBox root = new VBox(10, messageArea, inputBox, sendButton, startButton);
+    	
+    	inputBox.setOnKeyPressed(e -> {
+    	    if (e.getCode() == KeyCode.ENTER) {
+    	        sendMessage();
+    	    }
+    	});
 	    
-        sendButton.setOnAction(e -> {
-            String temp = identifier + ": " + inputBox.getText(); // message to send
-            messageArea.setText(messageArea.getText() + inputBox.getText() + "\n"); // update messages on screen
-            byte[] msg = temp.getBytes(); // convert to bytes
-            inputBox.setText(""); // remove text from input box
-
-            // create a packet & send
-            DatagramPacket send = new DatagramPacket(msg, msg.length, address, SERVER_PORT);
-            try {
-                socket.send(send);
-            } catch (IOException err) {
-                throw new RuntimeException(err);
-            }
-        });
+    	sendButton.setOnAction(e -> {
+    	    sendMessage();
+    	});
         
         startButton.setOnAction(e -> {
         	stage.setScene(gameScene);
@@ -99,6 +95,21 @@ public class ChatClient {
         stage.setScene(chatScene);
         
         
+    }
+    
+    private void sendMessage() {
+        String temp = identifier + ": " + inputBox.getText(); // message to send
+        messageArea.setText(messageArea.getText() + inputBox.getText() + "\n"); // update messages on screen
+        byte[] msg = temp.getBytes(); // convert to bytes
+        inputBox.setText(""); // remove text from input box
+
+        // create a packet & send
+        DatagramPacket send = new DatagramPacket(msg, msg.length, address, SERVER_PORT);
+        try {
+            socket.send(send);
+        } catch (IOException err) {
+            throw new RuntimeException(err);
+        }
     }
 }
 

@@ -40,7 +40,7 @@ public class GameTimer extends AnimationTimer {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
-        this.car = new Car(20, Game.WINDOW_CENTER);
+        this.car = new Car(20, Game.WINDOW_HEIGHT - 293); // Adjust the y-position as needed
         this.textToType = textToType;
         this.gameDuration = 15; // 1 minute game duration
         this.timerText = new Text();
@@ -64,7 +64,7 @@ public class GameTimer extends AnimationTimer {
 	        
 	        // check if time is up
 	        if (remainingTime <= 0) {
-	            stop(); // Stop the game
+	            stop(); // stop the game
 	            gameOverMessage(); // display game over message
 	            gameScene.setOnKeyPressed(null);
 	            handleGameOverKeyPress();
@@ -73,6 +73,11 @@ public class GameTimer extends AnimationTimer {
 	
 	        // render background, car, text to type, and timer
 	        this.renderBackground();
+	        
+	        // render road image
+	        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
+	        gc.drawImage(roadImage, 0, 0);
+	        
 	        this.renderCar();
 	        this.renderTextToType();
 	        this.renderTimer(remainingTime);
@@ -88,8 +93,6 @@ public class GameTimer extends AnimationTimer {
     	gc.clearRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
         gc.setFill(Color.web("#A6C9CB"));
         gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
-        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
-        gc.drawImage(roadImage, 0, 0);
     }
 
     private void renderCar() {

@@ -4,7 +4,8 @@ import javafx.scene.image.Image;
 
 public class Car extends Sprite {
     protected double speed;
-
+//	private int yPos;
+	
     // constants
     protected final static int CAR_WIDTH = 55;
     protected final static int CAR_HEIGHT = 30;
@@ -16,6 +17,9 @@ public class Car extends Sprite {
         this.speed = Car.CAR_SPEED;
         Image carImg = new Image(Car.CAR_IMG, Car.CAR_WIDTH, Car.CAR_HEIGHT, false, false);
         this.loadImage(carImg);
+        
+        // Adjust the y-position of the car to align with the road
+//        this.yPos = Game.WINDOW_HEIGHT - 100; // Adjust the value as needed
     }
 
 
