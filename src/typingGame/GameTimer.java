@@ -36,9 +36,7 @@ public class GameTimer extends AnimationTimer {
     private int currentWordIndex;
     private int totalCharactersTyped;
     private int correctCharactersTyped;
-
-    // constants
-    public final static Image BG_IMG = new Image("images/concrete-floor.jpg", Constants.WINDOW_WIDTH, Constants.WINDOW_WIDTH, false, false, false);
+    	
 
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage) {
         this.gc = gc;
