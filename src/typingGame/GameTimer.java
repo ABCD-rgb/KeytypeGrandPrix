@@ -38,13 +38,13 @@ public class GameTimer extends AnimationTimer {
     private int correctCharactersTyped;
 
     // constants
-    public final static Image BG_IMG = new Image("images/concrete-floor.jpg", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false, false);
+    public final static Image BG_IMG = new Image("images/concrete-floor.jpg", Constants.WINDOW_WIDTH, Constants.WINDOW_WIDTH, false, false, false);
 
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage) {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
-        this.car = new Car(20, Game.WINDOW_HEIGHT - 293); // adjust the y-position as needed
+        this.car = new Car(20, Constants.WINDOW_HEIGHT - 293); // adjust the y-position as needed
         this.textToType = textToType;
         this.gameDuration = 15;
         this.timerText = new Text();

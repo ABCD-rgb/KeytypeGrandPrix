@@ -28,13 +28,13 @@ import java.net.*;
 //import javafx.scene.control.TextArea;
 
 
-/* This Class is responsible to send and receive data from other clients (using the server as the middleman) */
+/* This Class is the client-logic (sends and receives data using the server as the middleman) */
 
 
 public class ChatClient {
     private static final DatagramSocket socket;	// socket to send and receive data
     private static final InetAddress address;	// address of the server
-    private static final int SERVER_PORT = 8000; // port number for the server
+    private static final int SERVER_PORT = Constants.PORT; // port number for the server
     
     private String identifier;	// username of the player
     private VBox messageBox;	// message box to display chat messages
@@ -53,7 +53,7 @@ public class ChatClient {
     }
     static {
         try {
-            address = InetAddress.getByName("localhost");
+            address = InetAddress.getByName(Constants.IP);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
@@ -224,6 +224,7 @@ public class ChatClient {
         VBox.setMargin(enterMessage, new Insets(10));
         messageBox.getChildren().add(enterMessage);
     }
+    
     
     // method to display a message that a player is ready
     public void displayReadyMessage(String userName) {

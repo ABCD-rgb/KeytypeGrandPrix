@@ -1,5 +1,6 @@
 package application;
 
+import typingGame.Constants;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -15,7 +16,7 @@ import java.util.List;
 
 public class ChatServer {
 	private static DatagramSocket socket;	
-	private static final int PORT = 8000;	// port number for the server socket
+	private static final int PORT = Constants.PORT;	// port number for the server socket
 	private static final InetAddress address;
 	private static ArrayList<Integer> players = new ArrayList<>();	// list to store the players' port numbers
 	private static byte[] incoming = new byte[265];	// byte array to store incoming data
@@ -34,7 +35,7 @@ public class ChatServer {
 	// set address of the server
     static {
         try {
-            address = InetAddress.getByName("localhost");
+            address = InetAddress.getByName(Constants.IP);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }

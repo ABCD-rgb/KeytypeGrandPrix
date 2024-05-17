@@ -40,17 +40,9 @@ public class Game {
 	private Button b1;
     private Button b2;
     private Button b3;
-	
-	// constants
-	public final static int WINDOW_WIDTH = 800;
-	public final static int WINDOW_HEIGHT = 600;
-	public final static int WINDOW_CENTER = WINDOW_WIDTH / 2;
-	public final static Image BG_IMG = new Image("images/welcome_bg.png", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false);
-	public final static ImageView LOGO = new ImageView(new Image("images/logo.png"));
-	public final static Image WINDOWLOGO = new Image("images/window_logo.png");
 
 	public Game() {
-		this.canvas = new Canvas(Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
+		this.canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 		this.root = new Group();
 		
 		// canvas is showing at the root
@@ -66,7 +58,7 @@ public class Game {
 		stage.setTitle("Key Type Grand Prix - Typing Game");
 		
 		// set the window logo
-	    stage.getIcons().add(WINDOWLOGO);
+	    stage.getIcons().add(Constants.WINDOWLOGO);
 		
 		// game entry point
 		this.initMenu(stage);
@@ -77,10 +69,10 @@ public class Game {
 	
 	// display the main menu
 	private void initMenu(Stage stage) {
-		Canvas canvas = new Canvas(Game.WINDOW_WIDTH, Game.WINDOW_HEIGHT);
+		Canvas canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 		GraphicsContext gc = canvas.getGraphicsContext2D();
 		
-		gc.drawImage(BG_IMG, 0, 0);
+		gc.drawImage(Constants.BG_IMG, 0, 0);
 		
 		// display buttons: "new game", "instructions", "about"
 		VBox menuButtons = this.createMenuButtons();
@@ -101,8 +93,8 @@ public class Game {
 		vbox.setPadding(new Insets(50, 5, 5, 5));
 		vbox.setSpacing(20);
 		
-		LOGO.setFitWidth(600);
-	    LOGO.setFitHeight(200);
+		Constants.LOGO.setFitWidth(600);
+		Constants.LOGO.setFitHeight(200);
 
 	    b1 = new Button("New Game");
         b2 = new Button("Instructions");
@@ -116,7 +108,7 @@ public class Game {
 		b2.styleProperty().setValue("-fx-background-radius: 15px; -fx-text-fill: #343857; -fx-background-color: #A2D9FF; -fx-border-color:#343857; -fx-border-radius: 15px; -fx-border-width: 5px" );
 		b3.styleProperty().setValue("-fx-background-radius: 15px; -fx-text-fill: #343857; -fx-background-color: #A2D9FF; -fx-border-color:#343857; -fx-border-radius: 15px; -fx-border-width: 5px" );
 
-		vbox.getChildren().addAll(LOGO,b1,b2,b3);//add the logo & buttons to the vbox
+		vbox.getChildren().addAll(Constants.LOGO,b1,b2,b3);//add the logo & buttons to the vbox
 		
 		// actions when a specific button is pressed
 		b1.setOnMousePressed(event -> darkenButton(b1));
@@ -187,7 +179,7 @@ public class Game {
 	public void initInstruct(Stage stage) {
 		StackPane root = new StackPane();
 
-	    ImageView backgroundImage = new ImageView(BG_IMG);
+	    ImageView backgroundImage = new ImageView(Constants.BG_IMG);
 	    
 	    VBox content = new VBox();
 	    content.setAlignment(Pos.CENTER);
@@ -196,8 +188,8 @@ public class Game {
 	    Font titleFont = Font.font("Verdana", FontWeight.BOLD, 30);
 	    Font bodyFont = Font.font("Verdana", 16);
 
-	    LOGO.setFitWidth(150);
-	    LOGO.setFitHeight(50);
+	    Constants.LOGO.setFitWidth(150);
+	    Constants.LOGO.setFitHeight(50);
 	    
 	    Label instructionsHeading = new Label("Instructions");
 	    instructionsHeading.setFont(titleFont);
@@ -238,7 +230,7 @@ public class Game {
 	    Label returnText = new Label("Press [ESC] to return to the main menu");
 	    returnText.setFont(bodyFont);
 
-	    content.getChildren().addAll(LOGO, instructionsHeading, introText, readyText,
+	    content.getChildren().addAll(Constants.LOGO, instructionsHeading, introText, readyText,
 	            instructionsBox, joinText, returnText);
 
 	    root.getChildren().addAll(backgroundImage, content);
