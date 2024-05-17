@@ -6,6 +6,10 @@ import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 
+
+/* This Class runs the game */
+
+
 public class Main extends Application {
 	
 	public static void main(String[] args) {

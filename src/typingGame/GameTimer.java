@@ -18,6 +18,10 @@ import javafx.scene.image.Image;
 import javafx.scene.text.Text;
 //import javafx.scene.control.TextField;
 
+
+/* This Class displays the animation inside the Game */
+
+
 public class GameTimer extends AnimationTimer {
     private GraphicsContext gc;
     private Scene gameScene;

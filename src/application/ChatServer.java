@@ -9,14 +9,20 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/* This Class runs the server (to allow multiplayer connection) */
+
+
 public class ChatServer {
+	private static DatagramSocket socket;	
 	private static final int PORT = 8000;	// port number for the server socket
+	private static final InetAddress address;
+	private static ArrayList<Integer> players = new ArrayList<>();	// list to store the players' port numbers
 	private static byte[] incoming = new byte[265];	// byte array to store incoming data
-	private static int readyClients = 0;	// number of clients that are ready
 	private static List<String> previousChats = new ArrayList<>();	// list to store previous chats
+	private static int readyClients = 0;	// number of clients that are ready
 	
 	// connect the server socket to a specific port
-	private static DatagramSocket socket;	
 	static {
 		try {
 			socket = new DatagramSocket(PORT);
@@ -25,11 +31,7 @@ public class ChatServer {
 			throw new RuntimeException(e);			
 		}
 	}
-	
-	private static ArrayList<Integer> players = new ArrayList<>();	// list to store the players' port numbers
-	
 	// set address of the server
-    private static final InetAddress address;
     static {
         try {
             address = InetAddress.getByName("localhost");
@@ -37,6 +39,7 @@ public class ChatServer {
             throw new RuntimeException(e);
         }
     }
+    
     
     public static void main(String[] args) {
     	System.out.println("Server started on port "+PORT);

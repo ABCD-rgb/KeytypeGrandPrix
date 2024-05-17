@@ -2,6 +2,10 @@ package typingGame;
 
 import javafx.scene.image.Image;
 
+
+/* This Class is the player as displayed on the screen */
+
+
 public class Car extends Sprite {
     protected double speed;
 	

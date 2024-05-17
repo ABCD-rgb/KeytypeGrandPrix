@@ -3,7 +3,7 @@ package typingGame;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
-// Represents all objects in the game
+/* This Class represents all objects in the game */
 
 public class Sprite {
 	protected Image img;

@@ -26,7 +26,10 @@ import javafx.stage.Stage;
 import java.net.*;
 import java.util.Optional;
 
-// entry point for different scenes
+
+/* This Class is an entry point for different scenes */
+
+
 public class Game {
 	private Stage stage;
 	private Scene menuScene;	// main menu screen
@@ -259,7 +262,7 @@ public class Game {
 	}
 	
 	
-	// TODO: chat scene --> chats between players who joined	
+	// chat scene --> chats between players who joined	
 	public void initChat(Stage stage) {
 	    StackPane root = new StackPane();
 	    root.setStyle("-fx-background-color: #A6C9CB;");
