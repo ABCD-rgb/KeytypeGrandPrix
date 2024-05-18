@@ -202,11 +202,11 @@ public class ChatClient {
     
     
     // method to start the game
-    public void handleStartGameMessage(int readyClients) {
+    public void handleStartGameMessage(int readyClients, int userID) {
         Platform.runLater(() -> {
             stage.setScene(gameScene);	// switch to the game scene
             String textToType = "type the text because this is test test test.";	// text to type in the game
-            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients);
+            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID);
             gameTimer.start();	// start the game timer
         });
     }

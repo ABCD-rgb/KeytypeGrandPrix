@@ -41,10 +41,10 @@ public class GameTimer extends AnimationTimer {
     // data for multiplayer
     private Car carUser;
     private List<Car> carOpponents = new ArrayList<>();
-    private int totalPlayers;	// TODO: should by dynamic
-    private int userIndex = 2;	// TODO: should be dynamic
+    private int totalPlayers;
+    private int userID;
 
-    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients) {
+    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID) {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
@@ -58,12 +58,14 @@ public class GameTimer extends AnimationTimer {
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
-
+        
         this.totalPlayers = readyClients;
+        this.userID = userID;
+        
         int xPos = 20;
         for (int i=1; i<totalPlayers+1; i++) {
         	int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
-        	if (userIndex == i) {
+        	if (this.userID == i) {
         		this.carUser = new Car(xPos, yPos);        		
         	} else {        		
         		carOpponents.add(new Car(xPos, yPos));

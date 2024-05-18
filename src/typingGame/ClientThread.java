@@ -50,8 +50,10 @@ public class ClientThread extends Thread {
             // handle different types of messages
             if (receivedMessage.startsWith("startGame")) {
             	String[] parts = receivedMessage.split(";");
+            	int readyClients = Integer.parseInt(parts[1]);
+            	int userID = Integer.parseInt(parts[2]);
                 Platform.runLater(() -> {
-                    chatClient.handleStartGameMessage(Integer.parseInt(parts[1]));	// call the method to start the game
+                    chatClient.handleStartGameMessage(readyClients, userID);	// call the method to start the game
                 });
             } else if (receivedMessage.startsWith("fetchResponse:")) {	// handle fetch response with chat history
                 String[] messages = receivedMessage.substring(14).split("\\|");

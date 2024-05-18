@@ -339,7 +339,7 @@ public class Game {
 	private void startTrainingMode(Stage stage) {
 	    GraphicsContext gc = this.canvas.getGraphicsContext2D();
 	    String textToType = "type the text because this is test test test.";
-	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, 1);
+	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, 1, 1);	// 1 and 1 is for readyClients and userID respectively (for multiplayer consideration)
 	    stage.setScene(gameScene);
 	    gameTimer.start();
 	}
