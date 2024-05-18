@@ -134,7 +134,7 @@ public class ChatServer {
     		        
     		        if (readyClients == players.size()) {
     		            // all clients are ready, send "startGame" message to all clients
-    		            byte[] startMessage = "startGame".getBytes();
+    		            byte[] startMessage = ("startGame;" + readyClients).getBytes();
     		            for (int forward_port : players) {
     		                DatagramPacket startPacket = new DatagramPacket(startMessage, startMessage.length, packet.getAddress(), forward_port);
     		                try {
