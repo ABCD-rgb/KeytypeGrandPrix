@@ -1,5 +1,8 @@
 package typingGame;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -27,7 +30,6 @@ public class GameTimer extends AnimationTimer {
     private Scene gameScene;
     private Stage stage;
     private long startTime;
-    private Car car;
     private String textToType;
     private long gameDuration;
     private long remainingTime;
@@ -36,13 +38,16 @@ public class GameTimer extends AnimationTimer {
     private int currentWordIndex;
     private int totalCharactersTyped;
     private int correctCharactersTyped;
-    	
+    // data for multiplayer
+    private Car carUser;
+    private List<Car> carOpponents = new ArrayList<>();
+    private int totalPlayers = 3;	// TODO: should by dynamic
+    private int userIndex = 1;	// TODO: should be dynamic
 
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage) {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
-        this.car = new Car(20, Constants.WINDOW_HEIGHT - 293); // adjust the y-position as needed
         this.textToType = textToType;
         this.gameDuration = 15;
         this.timerText = new Text();
@@ -53,6 +58,16 @@ public class GameTimer extends AnimationTimer {
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
+
+        int xPos = 20;
+        for (int i=1; i<totalPlayers+1; i++) {
+        	int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
+        	if (userIndex == i) {
+        		this.carUser = new Car(xPos, yPos);        		
+        	} else {        		
+        		carOpponents.add(new Car(xPos, yPos));
+        	}
+        }
 
         // methods ran at the start of GameTimer
         this.handleKeyPressEvent();
@@ -80,7 +95,7 @@ public class GameTimer extends AnimationTimer {
 	        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
 	        gc.drawImage(roadImage, 0, 0);
 	        
-	        this.renderCar();
+	        this.renderCars();
 	        this.renderTextToType();
 	        this.renderTimer(remainingTime);
 	        this.renderSpeedometer();
@@ -97,8 +112,11 @@ public class GameTimer extends AnimationTimer {
         gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
     }
 
-    private void renderCar() {
-        car.render(gc);
+    private void renderCars() {
+        carUser.render(gc);
+        for (Car car : carOpponents) {
+        	car.render(gc);
+        }
     }
 
     private void renderTextToType() {
@@ -175,7 +193,7 @@ public class GameTimer extends AnimationTimer {
             double targetX = (currentWordIndex + 1) * wordWidth;
 
             // move the car to the target position
-            car.move(targetX, (double) words.length);
+            carUser.move(targetX, (double) words.length);
 
             // check if the current word is fully typed
             if (words[currentWordIndex].isEmpty()) {
@@ -183,8 +201,14 @@ public class GameTimer extends AnimationTimer {
             }
         } else {
             // if all words are typed, move the car to the end of the screen
-            car.moveToEndOfScreen();
+            carUser.moveToEndOfScreen();
         }
+    }
+    
+    private void moveOpponents() {
+    	// TODO: wait to receive packets from other components
+    		// update xPos and yPos if the specific opponent based on packet received
+    	
     }
     
     private double calculateWordsPerMinute() {
@@ -215,6 +239,8 @@ public class GameTimer extends AnimationTimer {
                         if (currentWord.isEmpty()) {
                             currentWordIndex++;
                             moveCar();
+                            // TODO: send updated xPos and yPos to other players
+                            /* PLACE SOCKET SEND HERE */
                         }
                     } else if (!currentWord.isEmpty()) {
                         char typedChar;
@@ -250,6 +276,8 @@ public class GameTimer extends AnimationTimer {
                             if (currentWord.isEmpty()) {
                                 currentWordIndex++;
                                 moveCar();
+                                // TODO: send updated xPos and yPos to other players
+                                /* PLACE SOCKET SEND HERE */
                             }
                         } else {
                             displayIncorrectKeyMessage();
