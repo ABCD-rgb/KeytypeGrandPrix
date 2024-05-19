@@ -24,6 +24,8 @@ import javafx.stage.Stage;
 //import javafx.scene.shape.Rectangle;
 
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 // entry point for different scenes
@@ -301,7 +303,12 @@ public class Game {
 	        String username = usernameField.getText().trim();
 	        if (!username.isEmpty()) {
 	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            
+	            List<Car> cars = new ArrayList<>();
+	            List<Road> roads = new ArrayList<>();
+	            String[] words = new String[0];
+	            
+	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username, cars, words);
 	            chatClient.runChat();
 	        }
 	    });
@@ -312,7 +319,12 @@ public class Game {
 	        String username = usernameField.getText().trim();
 	        if (!username.isEmpty()) {
 	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            
+	            List<Car> cars = new ArrayList<>();
+	            List<Road> roads = new ArrayList<>();
+	            String[] words = new String[0];
+	            
+	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username, cars, words);
 	            chatClient.runChat();
 	        }
 	    });
@@ -344,7 +356,24 @@ public class Game {
 	private void startTrainingMode(Stage stage) {
 	    GraphicsContext gc = this.canvas.getGraphicsContext2D();
 	    String textToType = "type the text because this is test test test.";
-	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage);
+
+	    List<Car> cars = new ArrayList<>();
+	    List<Road> roads = new ArrayList<>();
+
+	    double roadWidth = Game.WINDOW_WIDTH;
+	    double roadHeight = Game.WINDOW_HEIGHT * 0.8;
+	    double roadY = Game.WINDOW_HEIGHT - roadHeight;
+
+	    String randomColor = Car.getRandomColor();
+	    double initialXPos = (Game.WINDOW_WIDTH - Car.CAR_WIDTH) / 2;
+	    double initialYPos = Game.WINDOW_HEIGHT - Car.CAR_HEIGHT - 20;
+	    Car car = new Car(randomColor, initialXPos, initialYPos);
+	    cars.add(car);
+
+	    Road road = new Road("images/road.png", 0, roadY, roadWidth, roadHeight);
+	    roads.add(road);
+
+	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, cars, roads);
 	    stage.setScene(gameScene);
 	    gameTimer.start();
 	}
@@ -358,7 +387,12 @@ public class Game {
 	    Optional<String> result = dialog.showAndWait();
 	    result.ifPresent(username -> {
 	        GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	        ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+
+	        List<Car> cars = new ArrayList<>();
+	        List<Road> roads = new ArrayList<>();
+	        String[] words = new String[0];
+
+	        ChatClient chatClient = new ChatClient(gameScene, gc, stage, username, cars, words);
 	        chatClient.runChat();
 	    });
 	}

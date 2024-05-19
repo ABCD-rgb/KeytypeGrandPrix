@@ -3,23 +3,24 @@ package typingGame;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
-// Represents all objects in the game
+// represents all objects in the game
 
 public class Sprite {
 	protected Image img;
-	protected double x, y;
-	protected double dx, dy;
-	protected double width, height;
+    protected double x, y;
+    protected double width, height;
 	
-	public Sprite(int xPos, int yPos) {
-		this.x = xPos;
-		this.y = yPos;
-	}
+    public Sprite(String imagePath, double xPos, double yPos) {
+        this.img = new Image(imagePath);
+        this.x = xPos;
+        this.y = yPos;
+        this.setSize();
+    }
 	
 	// method to set the image at a specific place
-	void render(GraphicsContext gc) {
-		gc.drawImage(this.img, this.x, this.y);
-	}
+    public void render(GraphicsContext gc) {
+        gc.drawImage(this.img, this.x, this.y);
+    }
 	
 	// method to see the object's image
 	protected void loadImage(Image img) {
@@ -36,22 +37,13 @@ public class Sprite {
 		this.height = this.img.getHeight();
 	}
 	
-	public void setDX(double val) {
-		this.dx = val;
-	}
+	public void setXPos(double xPos) {
+        this.x = xPos;
+    }
 	
-	public void setDY(double val) {
-		this.dy = val;
-	}
-	
-	public void setXPos(double val) {
-		this.x = val;
-	}
-	
-	public void setYPos(double val) {
-		this.x = val;
-	}
-
+	public void setYPos(double yPos) {
+        this.x = yPos;
+    }
 	
 	// === getters ===
 	public Image getImage() {
@@ -59,12 +51,12 @@ public class Sprite {
 	}
 	
 	public double getXPos() {
-		return this.x;
-	}
+        return this.x;
+    }
 	
 	public double getYPos() {
-		return this.y;
-	}
+        return this.y;
+    }
 	
 	public double getWidth() {
 		return this.width;

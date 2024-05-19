@@ -1,5 +1,8 @@
 package typingGame;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -23,7 +26,8 @@ public class GameTimer extends AnimationTimer {
     private Scene gameScene;
     private Stage stage;
     private long startTime;
-    private Car car;
+    private List<Car> cars;
+    private List<Road> roads;
     private String textToType;
     private long gameDuration;
     private long remainingTime;
@@ -36,26 +40,23 @@ public class GameTimer extends AnimationTimer {
     // constants
     public final static Image BG_IMG = new Image("images/concrete-floor.jpg", Game.WINDOW_WIDTH, Game.WINDOW_WIDTH, false, false, false);
 
-    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage) {
+    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, List<Car> cars, List<Road> roads) {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
-        this.car = new Car(20, Game.WINDOW_HEIGHT - 293); // adjust the y-position as needed
+        this.cars = cars;
+        this.roads = roads;
         this.textToType = textToType;
         this.gameDuration = 15;
-        this.timerText = new Text();
-        this.timerText.setFont(Font.font("Verdana", 16));
-        this.timerText.setFill(Color.WHITE);
         this.words = textToType.split("\\s+");
         this.currentWordIndex = 0;
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
 
-        // methods ran at the start of GameTimer
         this.handleKeyPressEvent();
     }
-
+    
     @Override
     public void handle(long currentNanoTime) {
     	try {
@@ -74,11 +75,9 @@ public class GameTimer extends AnimationTimer {
 	        // render background, car, text to type, and timer
 	        this.renderBackground();
 	        
-	        // render road image
-	        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
-	        gc.drawImage(roadImage, 0, 0);
-	        
-	        this.renderCar();
+	        this.renderBackground();
+	        this.renderRoads();
+	        this.renderCars();
 	        this.renderTextToType();
 	        this.renderTimer(remainingTime);
 	        this.renderSpeedometer();
@@ -88,17 +87,92 @@ public class GameTimer extends AnimationTimer {
             // handle the exception gracefully and ensure that the timer continues running
         }
     }
+    
+    private void initializeCarsAndRoads(int numPlayers) {
+        cars = new ArrayList<>();
+        roads = new ArrayList<>();
+
+        double roadWidth = gameScene.getWidth() / numPlayers;
+        double roadHeight = gameScene.getHeight() * 0.8;
+        double roadY = gameScene.getHeight() - roadHeight;
+
+        for (int i = 0; i < numPlayers; i++) {
+            String randomColor = Car.getRandomColor();
+            double initialXPos = 0;
+//            double initialYPos = roadY + (roadHeight / 2) - (Car.CAR_HEIGHT / 2); // Center the car vertically on the road
+//            double initialYPos = gameScene.getHeight() - roadHeight / 2 - Car.CAR_HEIGHT / 2;
+            double initialYPos = gameScene.getHeight() - Car.CAR_HEIGHT - 20;
+            Car car = new Car(randomColor, initialXPos, initialYPos);
+            cars.add(car);
+
+            Road road = new Road("images/road.png", i * roadWidth, roadY, roadWidth, roadHeight);
+            roads.add(road);
+        }
+        
+//        for (int i = 0; i < numPlayers; i++) {
+//            String randomColor = Car.getRandomColor();
+//            double initialXPos = 0; // Set the initial X position to the leftmost side of the screen
+//            double initialYPos = gameScene.getHeight() - Car.CAR_HEIGHT - 20;
+//            Car car = new Car(randomColor, initialXPos, initialYPos);
+//            cars.add(car);
+//
+//            Road road = new Road("images/road.png", i * roadWidth, roadY, roadWidth, roadHeight);
+//            roads.add(road);
+//        }
+    }
+    
+//    private void initializeCarsAndRoads(int numPlayers) {
+//        cars = new ArrayList<>();
+//        roads = new ArrayList<>();
+//
+//        double roadWidth = gameScene.getWidth() / numPlayers;
+//        double roadHeight = gameScene.getHeight() * 0.8;
+//        double roadY = gameScene.getHeight() - roadHeight;
+//
+//        for (int i = 0; i < numPlayers; i++) {
+//            String randomColor = Car.getRandomColor();
+//            double initialXPos = i * roadWidth + (roadWidth - Car.CAR_WIDTH) / 2;
+//            double initialYPos = gameScene.getHeight() - Car.CAR_HEIGHT - 20;
+//            Car car = new Car(randomColor, initialXPos, initialYPos);
+//            cars.add(car);
+//
+//            Road road = new Road("images/road.png", i * roadWidth, roadY, roadWidth, roadHeight);
+//            roads.add(road);
+//        }
+//    }
 
     private void renderBackground() {
     	gc.clearRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
         gc.setFill(Color.web("#A6C9CB"));
         gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
     }
+    
+    private void renderRoads() {
+        double roadWidth = gameScene.getWidth() / roads.size();
+        double roadHeight = gameScene.getHeight() * 0.8; // Adjust the road height as needed
+        double roadY = gameScene.getHeight() - roadHeight;
 
-    private void renderCar() {
-        car.render(gc);
+        for (int i = 0; i < roads.size(); i++) {
+            Road road = roads.get(i);
+            double roadX = i * roadWidth;
+            gc.drawImage(road.getImage(), roadX, roadY, roadWidth, roadHeight);
+        }
     }
 
+    private void renderCars() {
+    	for (Car car : cars) {
+            car.render(gc);
+        }
+//        double roadWidth = gameScene.getWidth() / cars.size();
+//        double carY = gameScene.getHeight() - Car.CAR_HEIGHT - 20; // Adjust the car's vertical position as needed
+//
+//        for (int i = 0; i < cars.size(); i++) {
+//            Car car = cars.get(i);
+//            double carX = i * roadWidth + (roadWidth - Car.CAR_WIDTH) / 2;
+//            car.render(gc, carX, carY);
+//        }
+    }
+    
     private void renderTextToType() {
         gc.setFill(Color.web("#C7E2F5"));
         gc.fillRoundRect(50, gameScene.getHeight() - 100, gameScene.getWidth() - 100, 50, 10, 10);
@@ -172,16 +246,25 @@ public class GameTimer extends AnimationTimer {
             double wordWidth = gameScene.getWidth() / words.length;
             double targetX = (currentWordIndex + 1) * wordWidth;
 
-            // move the car to the target position
-            car.move(targetX, (double) words.length);
+            // move the client's car to the target position
+            Car clientCar = cars.get(0); // Assuming the client's car is always the first car in the list
+            clientCar.move(targetX, (double) words.length);
 
             // check if the current word is fully typed
             if (words[currentWordIndex].isEmpty()) {
                 currentWordIndex++; // Move to the next word
             }
-        } else {
-            // if all words are typed, move the car to the end of the screen
-            car.moveToEndOfScreen();
+            
+            if (currentWordIndex == words.length) {
+                displayRaceCompleteMessage();
+                stop();
+                gameScene.setOnKeyPressed(null);
+                handleGameOverKeyPress();
+            }
+        } else {        	
+        	// if all words are typed, move the client's car to the end of the screen
+            Car clientCar = cars.get(0);
+            clientCar.moveToEndOfScreen();
         }
     }
     
@@ -197,7 +280,7 @@ public class GameTimer extends AnimationTimer {
         }
         return (double) correctCharactersTyped / totalCharactersTyped * 100.0;
     }
-    
+
     private void handleKeyPressEvent() {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
@@ -245,7 +328,7 @@ public class GameTimer extends AnimationTimer {
                             words[currentWordIndex] = currentWord.substring(1);
                             correctCharactersTyped++;
                             // check if the current word is completed
-                            if (currentWord.isEmpty()) {
+                            if (words[currentWordIndex].isEmpty()) {
                                 currentWordIndex++;
                                 moveCar();
                             }
@@ -253,18 +336,19 @@ public class GameTimer extends AnimationTimer {
                             displayIncorrectKeyMessage();
                         }
                     }
-                }
 
-                if (currentWordIndex == words.length) {
-                    displayRaceCompleteMessage();
-                    stop();
-                    gameScene.setOnKeyPressed(null);
-                    handleGameOverKeyPress();
+                    if (currentWordIndex == words.length) {
+                        displayRaceCompleteMessage();
+                        stop();
+                        gameScene.setOnKeyPressed(null);
+                        handleGameOverKeyPress();
+                    }
                 }
             }
         });
     }
 
+    
     private void handlePauseKeyPress() {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {

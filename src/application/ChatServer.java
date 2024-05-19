@@ -128,11 +128,12 @@ public class ChatServer {
     		            }
     		        }
     		        
-    		        if (readyClients == players.size()) {
-    		            // all clients are ready, send "startGame" message to all clients
-    		            byte[] startMessage = "startGame".getBytes();
+    		        if (readyClients >= 2 && readyClients <= 4 && readyClients == players.size()) {
+    		        	// all clients are ready, send "startGame" message to all clients
+    		            String startMessage = "startGame:" + readyClients;
+    		            byte[] startBytes = startMessage.getBytes();
     		            for (int forward_port : players) {
-    		                DatagramPacket startPacket = new DatagramPacket(startMessage, startMessage.length, packet.getAddress(), forward_port);
+    		                DatagramPacket startPacket = new DatagramPacket(startBytes, startBytes.length, packet.getAddress(), forward_port);
     		                try {
     		                    socket.send(startPacket);
     		                } catch (IOException e) {

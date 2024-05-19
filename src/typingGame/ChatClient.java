@@ -26,10 +26,15 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.*;
 //import javafx.scene.control.TextArea;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatClient {
     private static final DatagramSocket socket;	// socket to send and receive data
     private VBox messageBox;	// message box to display chat messages
+    private int numReadyPlayers;    // number of players that are ready to start the game
+    private List<Car> cars;
+    private String[] words;
 
     static {
         try {
@@ -58,11 +63,13 @@ public class ChatClient {
     private Stage stage;
     private String identifier;	// username of the player
     
-    public ChatClient(Scene gameScene, GraphicsContext gc, Stage stage, String username) {
+    public ChatClient(Scene gameScene, GraphicsContext gc, Stage stage, String username, List<Car> cars, String[] words) {
         this.gameScene = gameScene;
         this.gc = gc;
         this.stage = stage;
         this.identifier = username;
+        this.cars = cars;
+        this.words = words;
     }
     
     // method to join the chat room
@@ -95,7 +102,7 @@ public class ChatClient {
         messageBox.setPadding(new Insets(10));
         
         // start a separate thread for receiving messages
-        ClientThread clientThread = new ClientThread(socket, messageBox, this);
+        ClientThread clientThread = new ClientThread(socket, messageBox, this, cars, words);
         clientThread.start();
 
         // send initialization message to the server with the user's identifier
@@ -198,12 +205,36 @@ public class ChatClient {
     }
     
     // method to start the game
-    public void handleStartGameMessage() {
+    public void handleStartGameMessage(int numReadyPlayers) {
         Platform.runLater(() -> {
             stage.setScene(gameScene);	// switch to the game scene
             String textToType = "type the text because this is test test test.";	// text to type in the game
-            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage);
-            gameTimer.start();	// start the game timer
+
+            List<Car> cars = new ArrayList<>();
+            List<Road> roads = new ArrayList<>();
+
+            double roadWidth = gameScene.getWidth() / numReadyPlayers;
+            double roadHeight = gameScene.getHeight() * 0.8;
+            double roadY = gameScene.getHeight() - roadHeight;
+
+            for (int i = 0; i < numReadyPlayers; i++) {
+                String randomColor = Car.getRandomColor();
+                double initialXPos = i * roadWidth + (roadWidth - Car.CAR_WIDTH) / 2;
+                double initialYPos = gameScene.getHeight() - Car.CAR_HEIGHT - 20;
+                Car car = new Car(randomColor, initialXPos, initialYPos);
+                cars.add(car);
+
+                Road road = new Road("images/road.png", i * roadWidth, roadY, roadWidth, roadHeight);
+                roads.add(road);
+            }
+
+            String[] words = textToType.split("\\s+");
+            
+            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, cars, roads);
+            gameTimer.start();    // start the game timer
+            
+            this.cars = cars;
+            this.words = words;
         });
     }
     

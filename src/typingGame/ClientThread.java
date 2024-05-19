@@ -15,6 +15,7 @@ import java.net.DatagramSocket;
 //import javafx.scene.layout.HBox;
 //import javafx.scene.control.TextArea;
 //import javafx.scene.control.TextField;
+import java.util.List;
 
 public class ClientThread extends Thread {
 
@@ -22,11 +23,15 @@ public class ClientThread extends Thread {
     private byte[] incoming = new byte[256];	// byte array to store incoming data
     private VBox messageBox;	// message box to display chat messages
     private ChatClient chatClient;	// chat client object
+    private List<Car> cars;
+    private String[] words;
     
-    public ClientThread(DatagramSocket socket, VBox messageBox, ChatClient chatClient) {
+    public ClientThread(DatagramSocket socket, VBox messageBox, ChatClient chatClient, List<Car> cars, String[] words) {
         this.socket = socket;
         this.messageBox = messageBox;
         this.chatClient = chatClient;
+        this.cars = cars;
+        this.words = words;
     }
 
     @Override    
@@ -43,9 +48,10 @@ public class ClientThread extends Thread {
             String receivedMessage = new String(packet.getData(), 0, packet.getLength());
             
             // handle different types of messages
-            if (receivedMessage.equals("startGame")) {
+            if (receivedMessage.startsWith("startGame:")) {
+                int numReadyPlayers = Integer.parseInt(receivedMessage.substring(10));
                 Platform.runLater(() -> {
-                    chatClient.handleStartGameMessage();	// call the method to start the game
+                    chatClient.handleStartGameMessage(numReadyPlayers);	// handle start game message
                 });
             } else if (receivedMessage.startsWith("fetchResponse:")) {	// handle fetch response with chat history
                 String[] messages = receivedMessage.substring(14).split("\\|");
@@ -104,6 +110,11 @@ public class ClientThread extends Thread {
         messageBubble.getChildren().addAll(senderText, messageText);
 
         return messageBubble;
+    }
+    
+    private void moveOtherCars(int carIndex, double targetX) {
+        Car otherCar = cars.get(carIndex);
+        otherCar.move(targetX, (double) words.length);
     }
 }
 
