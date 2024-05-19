@@ -8,8 +8,9 @@ import javafx.scene.image.Image;
 
 public class Car extends Sprite {
     protected double speed;
-
-    public Car(int xPos, int yPos) {
+    private int carID;
+    
+    public Car(int xPos, int yPos, int carID) {
         super(xPos, yPos);
         this.speed = Constants.CAR_SPEED;
         Image carImg = new Image(Constants.CAR_IMG, Constants.CAR_WIDTH, Constants.CAR_HEIGHT, false, false);
@@ -56,6 +57,10 @@ public class Car extends Sprite {
     
     public double getWidth() {
         return Constants.CAR_WIDTH;
+    }
+    
+    public int getCarID() {
+    	return this.carID;
     }
 
 }

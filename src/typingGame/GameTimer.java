@@ -66,9 +66,9 @@ public class GameTimer extends AnimationTimer {
         for (int i=1; i<totalPlayers+1; i++) {
         	int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
         	if (this.userID == i) {
-        		this.carUser = new Car(xPos, yPos);        		
+        		this.carUser = new Car(xPos, yPos, userID);        		
         	} else {        		
-        		carOpponents.add(new Car(xPos, yPos));
+        		carOpponents.add(new Car(xPos, yPos, i));
         	}
         }
 
