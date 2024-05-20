@@ -10,11 +10,6 @@ import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-//import javafx.geometry.Pos;
-//import javafx.scene.control.Label;
-//import javafx.scene.layout.HBox;
-//import javafx.scene.control.TextArea;
-//import javafx.scene.control.TextField;
 
 
 /* This Class takes a client and runs it on a Thread */
@@ -37,10 +32,11 @@ public class ClientThread extends Thread {
     @Override    
     public void run() {
         System.out.println("starting thread");
+        
         while (true) {
             DatagramPacket packet = new DatagramPacket(incoming, incoming.length);
             try {
-                socket.receive(packet);	// receive packet
+                socket.receive(packet);    // receive packet
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -50,11 +46,16 @@ public class ClientThread extends Thread {
             // handle different types of messages
             if (receivedMessage.startsWith("startGame")) {
             	String[] parts = receivedMessage.split(";");
-            	int readyClients = Integer.parseInt(parts[1]);
-            	int userID = Integer.parseInt(parts[2]);
-                Platform.runLater(() -> {
-                    chatClient.handleStartGameMessage(readyClients, userID);	// call the method to start the game
-                });
+            	if (parts.length >= 4) {
+                    int readyClients = Integer.parseInt(parts[1]);
+                    int userID = Integer.parseInt(parts[2]);
+                    String textToType = parts[3]; // get the sentence from the server
+                    Platform.runLater(() -> {
+                        chatClient.handleStartGameMessage(readyClients, userID, textToType);	// call the method to start the game
+                    });
+                } else {
+                    System.out.println("Received invalid startGame message: " + receivedMessage);
+                }
             } else if (receivedMessage.startsWith("fetchResponse:")) {	// handle fetch response with chat history
                 String[] messages = receivedMessage.substring(14).split("\\|");
                 Platform.runLater(() -> {

@@ -25,7 +25,6 @@ import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.*;
-//import javafx.scene.control.TextArea;
 
 
 /* This Class is the client-logic (sends and receives data using the server as the middleman) */
@@ -39,7 +38,6 @@ public class ChatClient {
     private String identifier;	// username of the player
     private VBox messageBox;	// message box to display chat messages
     private static final TextField inputBox = new TextField();	// input box to type messages
-//  private static final TextArea messageArea = new TextArea();
     private Scene gameScene;
     private GraphicsContext gc;
     private Stage stage;
@@ -150,7 +148,7 @@ public class ChatClient {
         // create the start game button
         Button startButton = new Button("START GAME");
         startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
-        startButton.setOnAction(e -> {        	
+        startButton.setOnAction(e -> {
         	// send a message to the server to indicate that the player is ready
             String message = identifier + " is ready";
             byte[] msg = message.getBytes();
@@ -165,6 +163,18 @@ public class ChatClient {
             startButton.setStyle("-fx-background-color: #A9A9A9; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
 
             displayReadyMessage(identifier);	// display a message that the player is ready
+
+            // send the fetched sentence to the server
+            Game game = (Game) stage.getUserData();
+            String textToType = game.getTextToType();
+            String sentenceMessage = "sentence:" + textToType;
+            byte[] sentenceMsg = sentenceMessage.getBytes();
+            DatagramPacket sentenceSend = new DatagramPacket(sentenceMsg, sentenceMsg.length, address, SERVER_PORT);
+            try {
+                socket.send(sentenceSend);
+            } catch (IOException err) {
+                throw new RuntimeException(err);
+            }
         });
 
         // create a horizontal box for the input box and send button        
@@ -202,15 +212,15 @@ public class ChatClient {
     
     
     // method to start the game
-    public void handleStartGameMessage(int readyClients, int userID) {
-        Platform.runLater(() -> {
-            stage.setScene(gameScene);	// switch to the game scene
-            String textToType = "type the text because this is test test test.";	// text to type in the game
+    public void handleStartGameMessage(int readyClients, int userID, String textToType) {
+    	Platform.runLater(() -> {
+            GraphicsContext gc = this.gc;
+            gc.clearRect(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+            stage.setScene(gameScene);
             GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID);
-            gameTimer.start();	// start the game timer
+            gameTimer.start();
         });
     }
-    
     
     // method to send a message to the server
     public void displayEnterMessage(String userName) {
@@ -260,7 +270,6 @@ public class ChatClient {
             }
         }
     }
-
     
     // method to create a message bubble with the given message, sender name, and style
     private TextFlow createMessageBubble(String message, boolean isMyMessage, String senderName) {

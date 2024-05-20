@@ -22,6 +22,7 @@ public class ChatServer {
 	private static byte[] incoming = new byte[265];	// byte array to store incoming data
 	private static List<String> previousChats = new ArrayList<>();	// list to store previous chats
 	private static int readyClients = 0;	// number of clients that are ready
+	private static String textToType = "";  // variable to store the sentence to be used for the game
 	
 	// connect the server socket to a specific port
 	static {
@@ -46,19 +47,35 @@ public class ChatServer {
     	System.out.println("Server started on port "+PORT);
     	
     	while (true) {
-    		DatagramPacket packet = new DatagramPacket(incoming, incoming.length); // prepare packet
-    		try {
-    			socket.receive(packet);	// receive packet
-    		} catch (IOException e) {
-    			throw new RuntimeException(e);
-    		}
-    		
-    		String message = new String(packet.getData(), 0, packet.getLength());	// string receive from packet
-    		System.out.println("Server received: " + message);
+            DatagramPacket packet = new DatagramPacket(incoming, incoming.length); // prepare packet
+            try {
+                socket.receive(packet);    // receive packet
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            String message = new String(packet.getData(), 0, packet.getLength());    // string receive from packet
+            System.out.println("Server received: " + message);
+            int userPort = packet.getPort();	// get the port number of the player
+            byte[] byteMessage = message.getBytes();
+            
+            // forward position update messages to all clients
+            if (message.startsWith("updatePosition:")) {
+                // Forward position update messages to all clients
+                for (int forward_port : players) {
+                    if (forward_port != userPort) {
+                        DatagramPacket forwardPacket = new DatagramPacket(byteMessage, byteMessage.length, packet.getAddress(), forward_port);
+                        try {
+                            socket.send(forwardPacket);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            }
     		
     		// when player just joined the server
     		if (message.contains("init;")) {
-    		    int userPort = packet.getPort(); // get the port number of the player
     		    players.add(userPort);	// add the player to the list
     		    String enterMessage = message.split(";")[1] + " has entered the waiting room.";
     		    byte[] enterBytes = enterMessage.getBytes();
@@ -75,13 +92,10 @@ public class ChatServer {
     		        }
     		    }
     		    previousChats.add(enterMessage); // store the enter message in the list
-    		}
-    		
+    		}   		
+    		    		
     		// when player sent a message to the server
     		else {
-    			int userPort = packet.getPort();
-    		    byte[] byteMessage = message.getBytes();
-    			
     		    // when player wants to fetch previous chats
     		    if (message.startsWith("fetch:")) {
     		        String identifier = message.substring(6);
@@ -116,7 +130,9 @@ public class ChatServer {
     		            }
     		            previousChats.add(message); // store the enter message in the list
     		        }
-    		    } else if (message.endsWith(" is ready")) {
+    		    } else if (message.startsWith("sentence:")) {
+                    textToType = message.substring(9);  // Extract the sentence from the message
+                } else if (message.endsWith(" is ready")) {
     		        readyClients++;
     		        byte[] readyBytes = message.getBytes();
     		        
@@ -137,14 +153,14 @@ public class ChatServer {
     		        	byte[] startMessage;
     		        	int userID = 1;
     		            for (int forward_port : players) {
-    		            	startMessage = ("startGame;" + readyClients + ";" + userID).getBytes();
-    		                DatagramPacket startPacket = new DatagramPacket(startMessage, startMessage.length, packet.getAddress(), forward_port);
-    		                try {
-    		                    socket.send(startPacket);
-    		                } catch (IOException e) {
-    		                    throw new RuntimeException(e);
-    		                }
-    		                userID++;
+    		            	startMessage = ("startGame;" + readyClients + ";" + userID + ";" + textToType).getBytes();
+    		            	DatagramPacket startPacket = new DatagramPacket(startMessage, startMessage.length, packet.getAddress(), forward_port);
+                            try {
+                                socket.send(startPacket);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            userID++;
     		            }
     		        }
     		        

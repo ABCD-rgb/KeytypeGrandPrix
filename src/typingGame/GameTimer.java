@@ -19,7 +19,6 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.text.Text;
-//import javafx.scene.control.TextField;
 
 
 /* This Class displays the animation inside the Game */
@@ -49,16 +48,16 @@ public class GameTimer extends AnimationTimer {
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
         this.textToType = textToType;
-        this.gameDuration = 15;
+        this.words = textToType.split("\\s+");
+        this.gameDuration = calculateGameDuration(textToType);
         this.timerText = new Text();
         this.timerText.setFont(Font.font("Verdana", 16));
         this.timerText.setFill(Color.WHITE);
-        this.words = textToType.split("\\s+");
         this.currentWordIndex = 0;
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
-        
+
         this.totalPlayers = readyClients;
         this.userID = userID;
         
@@ -108,6 +107,15 @@ public class GameTimer extends AnimationTimer {
             // handle the exception gracefully and ensure that the timer continues running
         }
     }
+    
+    // calculate the duration of the game based on the text to type
+    private long calculateGameDuration(String textToType) {
+        int characterCount = textToType.length();
+        double wordsPerMinute = 180.0; // assuming an average typing speed of 180 words per minute
+        double minutesRequired = characterCount / wordsPerMinute;
+        long gameDurationInSeconds = (long) Math.ceil(minutesRequired * 60); // convert minutes to seconds
+        return gameDurationInSeconds;
+    }
 
     private void renderBackground() {
     	gc.clearRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
@@ -122,18 +130,59 @@ public class GameTimer extends AnimationTimer {
         }
     }
 
+    private String[] wrapText(String text, double maxWidth) {
+        String[] words = text.split("\\s+");
+        StringBuilder currentLine = new StringBuilder();
+        List<String> lines = new ArrayList<>();
+
+        for (String word : words) {
+            double lineWidth = gc.getFont().getSize() * (currentLine.length() + word.length()) * 0.6; // Adjust the factor as needed
+            if (lineWidth > maxWidth) {
+                lines.add(currentLine.toString());
+                currentLine = new StringBuilder();
+            }
+            currentLine.append(word).append(" ");
+        }
+        lines.add(currentLine.toString());
+
+        return lines.toArray(new String[0]);
+    }
+    
     private void renderTextToType() {
-        gc.setFill(Color.web("#C7E2F5"));
-        gc.fillRoundRect(50, gameScene.getHeight() - 100, gameScene.getWidth() - 100, 50, 10, 10);
         gc.setFont(new Font("Lucida Console", 20));
-        gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.CENTER);
 
         StringBuilder displayText = new StringBuilder();
         for (int i = currentWordIndex; i < words.length; i++) {
             displayText.append(words[i]).append(" ");
         }
-        gc.fillText(displayText.toString(), gameScene.getWidth() / 2, gameScene.getHeight() - 70);
+
+        // calculate the maximum width for the text
+        double maxWidth = gameScene.getWidth() - 100;
+
+        // wrap the text into multiple lines if necessary
+        String[] lines = wrapText(displayText.toString(), maxWidth);
+
+        // calculate the height of the text
+        double textHeight = gc.getFont().getSize() * lines.length;
+        double textY = gameScene.getHeight() - 70;
+
+        // calculate the background rectangle dimensions
+        double backgroundWidth = maxWidth;
+        double backgroundHeight = textHeight + 30;
+        double backgroundX = (gameScene.getWidth() - backgroundWidth) / 2;
+        double backgroundY = textY - textHeight / 2 - 20;
+
+        // draw the background rectangle
+        gc.setFill(Color.web("#C7E2F5"));
+        gc.fillRoundRect(backgroundX, backgroundY, backgroundWidth, backgroundHeight, 10, 10);
+
+        // draw the text lines
+        gc.setFill(Color.BLACK);
+        for (int i = 0; i < lines.length; i++) {
+            double lineY = textY + (i - (lines.length - 1) / 2.0) * gc.getFont().getSize();
+            gc.fillText(lines[i], gameScene.getWidth() / 2, lineY);
+        }
     }
     
     private void displayMessage(String message, Color color, int durationInMillis) {
@@ -276,7 +325,7 @@ public class GameTimer extends AnimationTimer {
                             words[currentWordIndex] = currentWord.substring(1);
                             correctCharactersTyped++;
                             // check if the current word is completed
-                            if (currentWord.isEmpty()) {
+                            if (words[currentWordIndex].isEmpty()) {
                                 currentWordIndex++;
                                 moveCar();
                                 // TODO: send updated xPos and yPos to other players
@@ -286,13 +335,14 @@ public class GameTimer extends AnimationTimer {
                             displayIncorrectKeyMessage();
                         }
                     }
-                }
 
-                if (currentWordIndex == words.length) {
-                    displayRaceCompleteMessage();
-                    stop();
-                    gameScene.setOnKeyPressed(null);
-                    handleGameOverKeyPress();
+                    // check if the entire sentence is typed correctly
+                    if (currentWordIndex == words.length) {
+                        displayRaceCompleteMessage();
+                        stop();
+                        gameScene.setOnKeyPressed(null);
+                        handleGameOverKeyPress();
+                    }
                 }
             }
         });
