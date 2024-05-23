@@ -25,6 +25,7 @@ import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.*;
+import java.util.HashMap;
 
 
 /* This Class is the client-logic (sends and receives data using the server as the middleman) */
@@ -41,6 +42,8 @@ public class ChatClient {
     private Scene gameScene;
     private GraphicsContext gc;
     private Stage stage;
+    
+    private HashMap<Integer, Car> opponentCars = new HashMap<>(); // store opponent cars by their ID
 
     static {
         try {
@@ -299,5 +302,27 @@ public class ChatClient {
         return messageBubble;
     }
         
+    // method to send position updates to the server whenever the player's position changes
+    public void sendPositionUpdate(double xPos, double yPos) {
+        String message = String.format("updatePosition;%s;%.2f;%.2f", identifier, xPos, yPos);
+        byte[] data = message.getBytes();
+        DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+        try {
+            socket.send(packet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // method to update the opponent's car position
+    public void updateOpponentPosition(int opponentID, double xPos, double yPos) {
+        Platform.runLater(() -> {
+            Car opponentCar = opponentCars.get(opponentID);
+            if (opponentCar != null) {
+                opponentCar.move(xPos, yPos);
+            }
+        });
+    }
+
 }
 

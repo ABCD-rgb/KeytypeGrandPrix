@@ -42,6 +42,7 @@ public class GameTimer extends AnimationTimer {
     private List<Car> carOpponents = new ArrayList<>();
     private int totalPlayers;
     private int userID;
+    private ChatClient chatClient;
 
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID) {
         this.gc = gc;
@@ -254,13 +255,20 @@ public class GameTimer extends AnimationTimer {
         } else {
             // if all words are typed, move the car to the end of the screen
             carUser.moveToEndOfScreen();
+            
+            // send the updated position to the server
+            chatClient.sendPositionUpdate(carUser.getXPos(), carUser.getYPos());
         }
     }
     
     private void moveOpponents() {
     	// TODO: wait to receive packets from other components
     		// update xPos and yPos if the specific opponent based on packet received
-    	
+    	 for (Car opponent : carOpponents) {
+             double wordWidth = gameScene.getWidth() / words.length;
+             double targetX = (currentWordIndex + 1) * wordWidth;
+             opponent.move(targetX, opponent.getYPos());
+         }
     }
     
     private double calculateWordsPerMinute() {

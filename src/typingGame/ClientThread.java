@@ -45,31 +45,33 @@ public class ClientThread extends Thread {
             
             // handle different types of messages
             if (receivedMessage.startsWith("startGame")) {
-            	String[] parts = receivedMessage.split(";");
-            	if (parts.length >= 4) {
+                String[] parts = receivedMessage.split(";");
+                if (parts.length >= 4) {
                     int readyClients = Integer.parseInt(parts[1]);
                     int userID = Integer.parseInt(parts[2]);
                     String textToType = parts[3]; // get the sentence from the server
                     Platform.runLater(() -> {
-                        chatClient.handleStartGameMessage(readyClients, userID, textToType);	// call the method to start the game
+                        chatClient.handleStartGameMessage(readyClients, userID, textToType); // call the method to start the game
                     });
                 } else {
                     System.out.println("Received invalid startGame message: " + receivedMessage);
                 }
-            } else if (receivedMessage.startsWith("fetchResponse:")) {	// handle fetch response with chat history
+            } else if (receivedMessage.startsWith("fetchResponse:")) { // handle fetch response with chat history
                 String[] messages = receivedMessage.substring(14).split("\\|");
                 Platform.runLater(() -> {
                     for (String message : messages) {
                         if (message.endsWith(" has entered the waiting room.")) {
                             String senderName = message.substring(0, message.length() - 30);
-                            chatClient.displayEnterMessage(senderName);	// display enter message
+                            chatClient.displayEnterMessage(senderName); // display enter message
                         } else if (message.endsWith(" is ready")) {
                             String senderName = message.substring(0, message.length() - 9);
-                            chatClient.displayReadyMessage(senderName);	// display ready message
+                            chatClient.displayReadyMessage(senderName); // display ready message
                         }
                     }
                 });
-            } else {	// handle regular chat messages
+            } else if (receivedMessage.startsWith("updatePosition:")) {
+                handlePositionUpdate(receivedMessage); // handle position update for opponent's car
+            } else { // handle regular chat messages
                 String[] parts = receivedMessage.split(": ");
                 if (parts.length == 2) {
                     String senderName = parts[0];
@@ -77,7 +79,7 @@ public class ClientThread extends Thread {
 
                     // create a message bubble for the received message
                     TextFlow messageBubble = createMessageBubble(chatMessage, false, senderName);
-                    
+
                     // update the message box on the JavaFX Application Thread
                     Platform.runLater(() -> {
                         messageBox.getChildren().add(messageBubble);
@@ -115,4 +117,16 @@ public class ClientThread extends Thread {
 
         return messageBubble;
     }
+    
+    private void handlePositionUpdate(String receivedMessage) {
+        String positionData = receivedMessage.substring("updatePosition:".length());
+        String[] parts = positionData.split(":");
+        if (parts.length == 3) {
+            int opponentID = Integer.parseInt(parts[0]);
+            double x = Double.parseDouble(parts[1]);
+            double y = Double.parseDouble(parts[2]);
+            Platform.runLater(() -> {
+                chatClient.updateOpponentPosition(opponentID, x, y); // call the method to update opponent's position
+            });
+        }
 }
