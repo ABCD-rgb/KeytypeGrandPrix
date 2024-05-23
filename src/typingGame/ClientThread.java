@@ -129,4 +129,5 @@ public class ClientThread extends Thread {
                 chatClient.updateOpponentPosition(opponentID, x, y); // call the method to update opponent's position
             });
         }
+    }
 }
