@@ -12,6 +12,7 @@ public class Car extends Sprite {
     
     public Car(int xPos, int yPos, int carID) {
         super(xPos, yPos);
+        this.carID = carID;
         this.speed = Constants.CAR_SPEED;
         Image carImg = new Image(Constants.CAR_IMG, Constants.CAR_WIDTH, Constants.CAR_HEIGHT, false, false);
         this.loadImage(carImg);

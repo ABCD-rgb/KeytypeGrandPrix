@@ -46,9 +46,21 @@ public class ClientThread extends Thread {
             }
 
             String receivedMessage = new String(packet.getData(), 0, packet.getLength());
-            
+            //System.out.println(receivedMessage);
+            if (receivedMessage.startsWith("updatePosition:")) {
+                System.out.println("Received: " + receivedMessage);
+                String[] parts = receivedMessage.split(":");
+                if (parts.length == 3) {
+                    int enemyIndex = Integer.parseInt(parts[1]);
+                    int enemyCurrentIndex = Integer.parseInt(parts[2]);
+                    // for testing
+                    //System.out.println("Updating opponent with enemyIndex: " + enemyIndex + ", enemyCurrentIndex: " + enemyCurrentIndex);
+                    chatClient.getGameTimer().moveOpponent(enemyIndex, enemyCurrentIndex);
+                }
+            }
+
             // handle different types of messages
-            if (receivedMessage.startsWith("startGame")) {
+            else if (receivedMessage.startsWith("startGame")) {
                 String[] parts = receivedMessage.split(";");
                 if (parts.length >= 4) {
                     int readyClients = Integer.parseInt(parts[1]);
@@ -60,8 +72,6 @@ public class ClientThread extends Thread {
                 } else {
                     System.out.println("Received invalid startGame message: " + receivedMessage);
                 }
-            } else if (receivedMessage.startsWith("updatePosition:")) {
-                handlePositionUpdate(receivedMessage); // handle position update for opponent's car
             } else if (receivedMessage.startsWith("fetchResponse:")) { // handle fetch response with chat history
                 String[] messages = receivedMessage.substring(14).split("\\|");
                 Platform.runLater(() -> {
@@ -78,8 +88,6 @@ public class ClientThread extends Thread {
                         }
                     }
                 });
-            } else if (receivedMessage.startsWith("updatePosition:")) {
-                handlePositionUpdate(receivedMessage); // handle position update for opponent's car
             } else { // handle regular chat messages
                 String[] parts = receivedMessage.split(": ");
                 if (parts.length == 2) {
@@ -108,7 +116,7 @@ public class ClientThread extends Thread {
         Text senderText = new Text();
         senderText.setFill(Color.web("#2196F3"));
         senderText.setStyle("-fx-font-weight: bold;");
-
+//        clientChat.moveEnemy(userId, position);
         Text messageText = new Text(message);
         messageText.setFill(Color.BLACK);
 
@@ -140,15 +148,5 @@ public class ClientThread extends Thread {
 //        }
 //    }
     
-    private void handlePositionUpdate(String receivedMessage) {
-        String[] parts = receivedMessage.split(";");
-        if (parts.length == 4) {
-            String identifier = parts[1];
-            double xPos = Double.parseDouble(parts[2]);
-            double yPos = Double.parseDouble(parts[3]);
-            Platform.runLater(() -> {
-                chatClient.updateOpponentPosition(Integer.parseInt(identifier), xPos, yPos); // call the method to update opponent's position
-            });
-        }
-    }
+
 }
