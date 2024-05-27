@@ -447,11 +447,15 @@ public class Game {
 	    root.getChildren().add(content);
 
 	    Scene chatScene = new Scene(root, 800, 600);
-	    chatScene.setOnKeyPressed(event -> {
-	        if (event.getCode() == KeyCode.ESCAPE) {
-	            initMenu(stage);
-	        }
-	    });
+        chatScene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                ChatClient chatClient = (ChatClient) stage.getUserData();
+                if (chatClient != null) {
+                    chatClient.disconnect();
+                }
+                initMenu(stage);
+            }
+        });
 	    
 	    stage.setScene(chatScene);
 	}
@@ -471,26 +475,27 @@ public class Game {
 	}
 	
 	private void startTrainingMode(Stage stage) {
-		newTextToType();
+	    newTextToType();
 	    GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, 1, 1);	// 1 and 1 is for readyClients and userID respectively (for multiplayer consideration)
+	    // 1 and 1 is for readyClients and userID respectively (for multiplayer consideration)
+	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, 1, 1, null, null);
 	    stage.setScene(gameScene);
 	    gameTimer.start();
 	}
 	
 	private void startRaceMode(Stage stage) {
-	    TextInputDialog dialog = new TextInputDialog();
-	    dialog.setTitle("Enter Username");
-	    dialog.setHeaderText(null);
-	    dialog.setContentText("Please enter your username:");
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Enter Username");
+        dialog.setHeaderText(null);
+        dialog.setContentText("Please enter your username:");
 
-	    Optional<String> result = dialog.showAndWait();
-	    result.ifPresent(username -> {
-	        GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	        ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
-	        chatClient.runChat();
-	    });
-	}
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(username -> {
+            GraphicsContext gc = this.canvas.getGraphicsContext2D();
+            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+            chatClient.runChat();
+        });
+    }
 	
 	private void fetchLeaderboardData(VBox leaderboardsBox) {
 	    // clear the existing scores

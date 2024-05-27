@@ -51,53 +51,7 @@ public class GameTimer extends AnimationTimer {
     private int totalPlayers;
     private int userID;
     private boolean isMultiplayer;
-
-
-    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID) {
-        this.gc = gc;
-        this.gameScene = gameScene;
-        this.startTime = System.nanoTime();
-        this.words = textToType.split("\\s+");
-        this.gameDuration = calculateGameDuration(textToType);
-        this.timerText = new Text();
-        this.timerText.setFont(Font.font("Verdana", 16));
-        this.timerText.setFill(Color.WHITE);
-        this.currentWordIndex = 0;
-        this.totalCharactersTyped = 0;
-        this.correctCharactersTyped = 0;
-        this.stage = stage;
-        this.isMultiplayer = false;
-        this.totalPlayers = readyClients;
-        this.userID = userID;
         
-//        int xPos = 20;
-//        for (int i=1; i<totalPlayers+1; i++) {
-//        	int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
-//        	if (this.userID == i) {
-//        		this.carUser = new Car(xPos, yPos, userID);        		
-//        	} else {        		
-//        		carOpponents.add(new Car(xPos, yPos, i));
-//        	}
-//        }
-        
-        int xPos = 20;
-        int ySpacing = 80; // Adjust this value to control the vertical spacing between cars
-        int totalHeight = (totalPlayers - 1) * ySpacing;
-        int startY = (Constants.WINDOW_HEIGHT - totalHeight) / 2;
-
-        for (int i = 1; i <= totalPlayers; i++) {
-            int yPos = startY + (i - 1) * ySpacing;
-            if (this.userID == i) {
-                this.carUser = new Car(xPos, yPos, userID);
-            } else {
-                carOpponents.add(new Car(xPos, yPos, i));
-            }
-        }
-        
-        // methods ran at the start of GameTimer
-        this.handleKeyPressEvent();
-    }
-    
     // New constructor with socket and address parameters
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address) {
         this.gc = gc;
@@ -117,14 +71,22 @@ public class GameTimer extends AnimationTimer {
         this.userID = userID;
 
         int xPos = 20;
-        for (int i=1; i<totalPlayers+1; i++) {
-            int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
+        int ySpacing = 80; // Adjust this value to control the vertical spacing between cars
+        int totalHeight = (totalPlayers - 1) * ySpacing;
+        int startY = (Constants.WINDOW_HEIGHT - totalHeight) / 2;
+
+        for (int i = 1; i <= totalPlayers; i++) {
+            int yPos = startY + (i - 1) * ySpacing;
             if (this.userID == i) {
                 this.carUser = new Car(xPos, yPos, userID);
             } else {
                 carOpponents.add(new Car(xPos, yPos, i));
             }
         }
+
+        // Assign socket and address
+        this.socket = socket;
+        this.address = address;
 
         // Assign socket and address
         this.socket = socket;
@@ -182,27 +144,42 @@ public class GameTimer extends AnimationTimer {
         gc.setFill(Color.web("#A6C9CB"));
         gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
     }
-
+    
 //    private void renderCars() {
+//        // Render road images
+//        for (int i = 0; i < totalPlayers; i++) {
+//            int yPos;
+//            if (i == userID - 1) {
+//                yPos = (int) carUser.getYPos();
+//            } else if (i < carOpponents.size()) {
+//                yPos = (int) carOpponents.get(i).getYPos();
+//            } else {
+//                continue; // Skip rendering road if opponent car doesn't exist
+//            }
+//            Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight() / totalPlayers, false, false);
+//            gc.drawImage(roadImage, 0, yPos - (gameScene.getHeight() / totalPlayers) / 2);
+//        }
+//
+//        // Render cars
 //        carUser.render(gc);
 //        for (Car car : carOpponents) {
-//        	car.render(gc);
+//            car.render(gc);
 //        }
 //    }
     
     private void renderCars() {
         // Render road images
         for (int i = 0; i < totalPlayers; i++) {
-            int yPos;
+            double yPos;
             if (i == userID - 1) {
-                yPos = (int) carUser.getYPos();
+                yPos = carUser.getYPos();
             } else if (i < carOpponents.size()) {
-                yPos = (int) carOpponents.get(i).getYPos();
+                yPos = carOpponents.get(i).getYPos();
             } else {
                 continue; // Skip rendering road if opponent car doesn't exist
             }
-            Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight() / totalPlayers, false, false);
-            gc.drawImage(roadImage, 0, yPos - (gameScene.getHeight() / totalPlayers) / 2);
+            Image roadImage = new Image("images/road.png", gameScene.getWidth(), Constants.CAR_HEIGHT * 2, false, false);
+            gc.drawImage(roadImage, 0, yPos - Constants.CAR_HEIGHT);
         }
 
         // Render cars
@@ -339,36 +316,7 @@ public class GameTimer extends AnimationTimer {
             carUser.moveToEndOfScreen();
         }
     }
-   
-//    public void moveOpponent(int index, int curr) {
-//    	Car opponent = null;
-//    	
-//    	for (Car car: carOpponents) {
-//    		if (index == car.getCarID()) opponent = car;
-//    	}
-//    	
-//    	if (opponent == null) return;
-//    	
-//    	  // move the car only when there are words left to type
-//        if (currentWordIndex < words.length) {
-//            // calculate the target position for the car
-//            double wordWidth = gameScene.getWidth() / words.length;
-//            double targetX = (currentWordIndex + 1) * wordWidth;
-//
-//            // move the car to the target position
-//            opponent.move(targetX, (double) words.length);
-//            
-//            
-//            // check if the current word is fully typed
-//            if (words[currentWordIndex].isEmpty()) {
-//                currentWordIndex++; // Move to the next word
-//            }
-//        } else {
-//            // if all words are typed, move the car to the end of the screen
-//           opponent.moveToEndOfScreen();
-//        }
-//    	
-//    }
+    
     public void moveOpponent(int index, int curr) {
         System.out.println("moveOpponent called with index: " + index + ", curr: " + curr);
         Car opponent = null;
@@ -403,7 +351,7 @@ public class GameTimer extends AnimationTimer {
 
     private double calculateAccuracy() {
         if (totalCharactersTyped == 0) {
-            return 100.0;
+            return 0.0; // Return 0 accuracy if no characters are typed
         }
         return (double) correctCharactersTyped / totalCharactersTyped * 100.0;
     }
@@ -428,7 +376,6 @@ public class GameTimer extends AnimationTimer {
                         }
                     } else if (!currentWord.isEmpty()) {
                         char typedChar;
-              
                         if (e.getCode() == KeyCode.CAPS) {
                             // check if Caps Lock is pressed
                             String text = e.getText();
@@ -516,7 +463,7 @@ public class GameTimer extends AnimationTimer {
     }
     
     private void handleGameOverKeyPress() {
-        gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+    	gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
                     // return to the main menu
@@ -525,14 +472,20 @@ public class GameTimer extends AnimationTimer {
                 }
             }
         });
-        
-//        // send the score to the server
-//        if (chatClient != null) {
-//            chatClient.sendScore(calculateWordsPerMinute(), calculateAccuracy());
-//        }
 
-        // TODO: RANK based on player's rank (1st,2nd,3rd,etc.)
-        // display game over popup with stats
+        // Send the score to the server
+        if (isMultiplayer) {
+            String message = "score:" + userID + ":" + calculateWordsPerMinute() + ":" + calculateAccuracy();
+            byte[] scoreData = message.getBytes();
+            DatagramPacket scoreSend = new DatagramPacket(scoreData, scoreData.length, address, SERVER_PORT);
+            try {
+                socket.send(scoreSend);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Display game over popup with stats
         String gameOverStats = String.format("Words Per Minute: %.2f\nAccuracy: %.2f%%", calculateWordsPerMinute(), calculateAccuracy());
         displayGameOverPopup(gameOverStats);
     }

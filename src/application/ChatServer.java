@@ -65,9 +65,13 @@ public class ChatServer {
             
             // forward position update messages to all clients
             if (message.startsWith("updatePosition:")) {
+                String[] parts = message.split(":");
+                int userID = Integer.parseInt(parts[1]);
+                int currentWordIndex = Integer.parseInt(parts[2]);
+                byte[] positionData = message.getBytes();
                 for (int forward_port : players) {
                     if (forward_port != userPort) {
-                        DatagramPacket forwardPacket = new DatagramPacket(byteMessage, byteMessage.length, packet.getAddress(), forward_port);
+                        DatagramPacket forwardPacket = new DatagramPacket(positionData, positionData.length, packet.getAddress(), forward_port);
                         try {
                             socket.send(forwardPacket);
                         } catch (IOException e) {
@@ -98,17 +102,14 @@ public class ChatServer {
     		}
     		
     		// when player has finished typing, send the score to the server
-    		else if (message.startsWith("score;")) {
-    	        String[] parts = message.split(";");
-    	        if (parts.length == 4) {
-    	            String identifier = parts[1];
-    	            double wordsPerMinute = Double.parseDouble(parts[2]);
-    	            double accuracy = Double.parseDouble(parts[3]);
-    	            PlayerScore playerScore = new PlayerScore(identifier, wordsPerMinute, accuracy);
-    	            leaderboard.add(playerScore);
-    	            Collections.sort(leaderboard); // sort the leaderboard
-    	            System.out.println("Score saved for " + identifier + ": " + wordsPerMinute + " wpm, " + accuracy + "% accuracy");
-    	        }
+    		else if (message.startsWith("score:")) {
+    	        String[] parts = message.split(":");
+    	        int userID = Integer.parseInt(parts[1]);
+    	        double wordsPerMinute = Double.parseDouble(parts[2]);
+    	        double accuracy = Double.parseDouble(parts[3]);
+    	        PlayerScore playerScore = new PlayerScore(Integer.toString(userID), wordsPerMinute, accuracy);
+    	        leaderboard.add(playerScore);
+    	        Collections.sort(leaderboard);
     	    }
     		
     		// when client wants to view the leaderboards
