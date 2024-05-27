@@ -25,48 +25,51 @@ import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.net.*;
-//import javafx.scene.control.TextArea;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /* This Class is the client-logic (sends and receives data using the server as the middleman) */
 
 
 public class ChatClient {
-    private static final DatagramSocket socket;	// socket to send and receive data
-    private static final InetAddress address;	// address of the server
+    private DatagramSocket socket;	// socket to send and receive data
+    private InetAddress address;	// address of the server
     private static final int SERVER_PORT = Constants.PORT; // port number for the server
     
     private String identifier;	// username of the player
     private VBox messageBox;	// message box to display chat messages
     private static final TextField inputBox = new TextField();	// input box to type messages
-//  private static final TextArea messageArea = new TextArea();
     private Scene gameScene;
     private GraphicsContext gc;
     private Stage stage;
+    private boolean isReady;
+	private GameTimer gameTimer;
 
-    static {
-        try {
-            socket = new DatagramSocket();	// init on any available port
-        } catch (SocketException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    static {
-        try {
-            address = InetAddress.getByName(Constants.IP);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-    }   
-
-    
     public ChatClient(Scene gameScene, GraphicsContext gc, Stage stage, String username) {
         this.gameScene = gameScene;
         this.gc = gc;
         this.stage = stage;
         this.identifier = username;
+        this.isReady = false;
+        connect();
     }
     
+    
+    // Method to connect to the server
+    public void connect() {
+        try {
+            socket = new DatagramSocket(); // init on any available port
+            address = InetAddress.getByName(Constants.IP);
+        } catch (SocketException | UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    
+    public GameTimer getGameTimer() {
+    	return this.gameTimer;
+    }
     
     // method to join the chat room
     public void runChat() {
@@ -150,8 +153,9 @@ public class ChatClient {
         // create the start game button
         Button startButton = new Button("START GAME");
         startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
-        startButton.setOnAction(e -> {        	
+        startButton.setOnAction(e -> {
         	// send a message to the server to indicate that the player is ready
+        	this.isReady = true;
             String message = identifier + " is ready";
             byte[] msg = message.getBytes();
             DatagramPacket send = new DatagramPacket(msg, msg.length, address, SERVER_PORT);
@@ -165,6 +169,18 @@ public class ChatClient {
             startButton.setStyle("-fx-background-color: #A9A9A9; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
 
             displayReadyMessage(identifier);	// display a message that the player is ready
+
+            // send the fetched sentence to the server
+            Game game = (Game) stage.getUserData();
+            String textToType = game.getTextToType();
+            String sentenceMessage = "sentence:" + textToType;
+            byte[] sentenceMsg = sentenceMessage.getBytes();
+            DatagramPacket sentenceSend = new DatagramPacket(sentenceMsg, sentenceMsg.length, address, SERVER_PORT);
+            try {
+                socket.send(sentenceSend);
+            } catch (IOException err) {
+                throw new RuntimeException(err);
+            }
         });
 
         // create a horizontal box for the input box and send button        
@@ -192,6 +208,8 @@ public class ChatClient {
         Scene chatScene = new Scene(root, 800, 600);
         chatScene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
+            	disconnect();
+            	// reduce the number of players
                 Game game = new Game();	// return to the main menu when the Escape key is pressed
                 game.setStage(stage);
             }
@@ -202,15 +220,15 @@ public class ChatClient {
     
     
     // method to start the game
-    public void handleStartGameMessage(int readyClients, int userID) {
-        Platform.runLater(() -> {
-            stage.setScene(gameScene);	// switch to the game scene
-            String textToType = "type the text because this is test test test.";	// text to type in the game
-            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID);
-            gameTimer.start();	// start the game timer
+    public void handleStartGameMessage(int readyClients, int userID, String textToType) {
+    	Platform.runLater(() -> {
+            GraphicsContext gc = this.gc;
+            gc.clearRect(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+            stage.setScene(gameScene);
+            this.gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, this.socket, this.address);
+            this.gameTimer.start();
         });
     }
-    
     
     // method to send a message to the server
     public void displayEnterMessage(String userName) {
@@ -239,6 +257,18 @@ public class ChatClient {
         messageBox.getChildren().add(readyMessage);
     }
     
+    // method to display a message that a player is ready
+    public void displayExitMessage(String userName) {
+        Text exitText = new Text(userName + " has disconnected.");
+        exitText.setFill(Color.RED);
+        exitText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        
+        TextFlow exitMessage = new TextFlow(exitText);
+        exitMessage.setTextAlignment(TextAlignment.CENTER);
+        
+        VBox.setMargin(exitMessage, new Insets(10));
+        messageBox.getChildren().add(exitMessage);
+    }
     
     // method to send a message to the server
     private void sendMessage() {
@@ -260,7 +290,6 @@ public class ChatClient {
             }
         }
     }
-
     
     // method to create a message bubble with the given message, sender name, and style
     private TextFlow createMessageBubble(String message, boolean isMyMessage, String senderName) {
@@ -289,6 +318,26 @@ public class ChatClient {
 
         return messageBubble;
     }
-        
+    
+    // Method to disconnect from the server
+    public void disconnect() {
+    	// remove the player from the player list in the server
+    	String message = "disconnect;"+this.identifier+";"+this.isReady;
+    	byte[] data = message.getBytes();
+    	DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+    	try {
+    		socket.send(packet);
+    	} catch (IOException e) {
+    		e.printStackTrace();
+    	} finally {
+    		if (socket != null && !socket.isClosed()) {
+    			socket.close();
+    		}    		
+    	}
+    	
+    }
+    
+    
+
 }
 

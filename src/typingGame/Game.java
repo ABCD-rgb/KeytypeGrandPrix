@@ -19,9 +19,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-//import javafx.geometry.Insets;
-//import javafx.scene.paint.Color;
-//import javafx.scene.shape.Rectangle;
+import typingGame.QuoteFetcher;
 
 import java.net.*;
 import java.util.Optional;
@@ -40,6 +38,7 @@ public class Game {
 	private Button b1;
     private Button b2;
     private Button b3;
+    private String textToType;
 
 	public Game() {
 		this.canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
@@ -49,6 +48,7 @@ public class Game {
 		this.root.getChildren().add(this.canvas);
 		this.gameScene = new Scene(this.root);
 		this.shadow = new DropShadow();
+		fetchTextToType();
 	}
 	
 	
@@ -61,11 +61,18 @@ public class Game {
 	    stage.getIcons().add(Constants.WINDOWLOGO);
 		
 		// game entry point
+	    stage.setUserData(this);
 		this.initMenu(stage);
 		stage.setResizable(false);
 		stage.show();
-	}
+	}       
 	
+	private void fetchTextToType() {
+        textToType = QuoteFetcher.fetchRandomQuote();
+        if (textToType == null) {
+            textToType = "Default text to type.";
+        }
+    }
 	
 	// display the main menu
 	private void initMenu(Stage stage) {
@@ -174,8 +181,6 @@ public class Game {
 		}
 	}
 	
-	
-	// TODO: instructions scene
 	public void initInstruct(Stage stage) {
 		StackPane root = new StackPane();
 
@@ -316,6 +321,7 @@ public class Game {
 
 	    raceModeButton.setOnAction(event -> {
 	        usernameBox.setVisible(true);
+	        usernameField.requestFocus(); // automatically activate the username field
 	    });
 	    
 	    Label returnLabel = new Label("Press [ESC] to return to the main menu");
@@ -336,9 +342,23 @@ public class Game {
 	    stage.setScene(chatScene);
 	}
 	
+	private void newTextToType() {
+        String newSentence = QuoteFetcher.fetchRandomQuote();
+        if (newSentence != null) {
+            this.textToType = newSentence;
+            System.out.println("New sentence: " + this.textToType);
+        } else {
+            System.out.println("Failed to fetch a new sentence");
+        }
+    }
+	
+	public String getTextToType() {
+	    return this.textToType;
+	}
+	
 	private void startTrainingMode(Stage stage) {
+		newTextToType();
 	    GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	    String textToType = "type the text because this is test test test.";
 	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, 1, 1);	// 1 and 1 is for readyClients and userID respectively (for multiplayer consideration)
 	    stage.setScene(gameScene);
 	    gameTimer.start();

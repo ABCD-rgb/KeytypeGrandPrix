@@ -1,7 +1,12 @@
 package typingGame;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
@@ -19,7 +24,6 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.scene.image.Image;
 import javafx.scene.text.Text;
-//import javafx.scene.control.TextField;
 
 
 /* This Class displays the animation inside the Game */
@@ -30,7 +34,6 @@ public class GameTimer extends AnimationTimer {
     private Scene gameScene;
     private Stage stage;
     private long startTime;
-    private String textToType;
     private long gameDuration;
     private long remainingTime;
     private Text timerText;
@@ -39,26 +42,31 @@ public class GameTimer extends AnimationTimer {
     private int totalCharactersTyped;
     private int correctCharactersTyped;
     // data for multiplayer
+    private DatagramSocket socket;
+    private InetAddress address;	// address of the server
+    private static final int SERVER_PORT = Constants.PORT; // port number for the server
+    
     private Car carUser;
     private List<Car> carOpponents = new ArrayList<>();
     private int totalPlayers;
     private int userID;
+    private boolean isMultiplayer;
+
 
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID) {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
-        this.textToType = textToType;
-        this.gameDuration = 15;
+        this.words = textToType.split("\\s+");
+        this.gameDuration = calculateGameDuration(textToType);
         this.timerText = new Text();
         this.timerText.setFont(Font.font("Verdana", 16));
         this.timerText.setFill(Color.WHITE);
-        this.words = textToType.split("\\s+");
         this.currentWordIndex = 0;
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
-        
+        this.isMultiplayer = false;
         this.totalPlayers = readyClients;
         this.userID = userID;
         
@@ -71,10 +79,47 @@ public class GameTimer extends AnimationTimer {
         		carOpponents.add(new Car(xPos, yPos, i));
         	}
         }
+        
+        // methods ran at the start of GameTimer
+        this.handleKeyPressEvent();
+    }
+    
+    // New constructor with socket and address parameters
+    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address) {
+        this.gc = gc;
+        this.gameScene = gameScene;
+        this.startTime = System.nanoTime();
+        this.words = textToType.split("\\s+");
+        this.gameDuration = calculateGameDuration(textToType);
+        this.timerText = new Text();
+        this.timerText.setFont(Font.font("Verdana", 16));
+        this.timerText.setFill(Color.WHITE);
+        this.currentWordIndex = 0;
+        this.totalCharactersTyped = 0;
+        this.correctCharactersTyped = 0;
+        this.stage = stage;
+        this.isMultiplayer = true;
+        this.totalPlayers = readyClients;
+        this.userID = userID;
+
+        int xPos = 20;
+        for (int i=1; i<totalPlayers+1; i++) {
+            int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
+            if (this.userID == i) {
+                this.carUser = new Car(xPos, yPos, userID);
+            } else {
+                carOpponents.add(new Car(xPos, yPos, i));
+            }
+        }
+
+        // Assign socket and address
+        this.socket = socket;
+        this.address = address;
 
         // methods ran at the start of GameTimer
         this.handleKeyPressEvent();
     }
+
 
     @Override
     public void handle(long currentNanoTime) {
@@ -100,13 +145,22 @@ public class GameTimer extends AnimationTimer {
 	        
 	        this.renderCars();
 	        this.renderTextToType();
-	        this.renderTimer(remainingTime);
+	        this.renderAccuracyMeter();
 	        this.renderSpeedometer();
 	        
     	} catch (Exception e) {
             e.printStackTrace();
             // handle the exception gracefully and ensure that the timer continues running
         }
+    }
+    
+    // calculate the duration of the game based on the text to type
+    private long calculateGameDuration(String textToType) {
+        int characterCount = textToType.length();
+        double wordsPerMinute = 180.0; // assuming an average typing speed of 180 words per minute
+        double minutesRequired = characterCount / wordsPerMinute;
+        long gameDurationInSeconds = (long) Math.ceil(minutesRequired * 60); // convert minutes to seconds
+        return gameDurationInSeconds;
     }
 
     private void renderBackground() {
@@ -122,18 +176,59 @@ public class GameTimer extends AnimationTimer {
         }
     }
 
+    private String[] wrapText(String text, double maxWidth) {
+        String[] words = text.split("\\s+");
+        StringBuilder currentLine = new StringBuilder();
+        List<String> lines = new ArrayList<>();
+
+        for (String word : words) {
+            double lineWidth = gc.getFont().getSize() * (currentLine.length() + word.length()) * 0.6; // Adjust the factor as needed
+            if (lineWidth > maxWidth) {
+                lines.add(currentLine.toString());
+                currentLine = new StringBuilder();
+            }
+            currentLine.append(word).append(" ");
+        }
+        lines.add(currentLine.toString());
+
+        return lines.toArray(new String[0]);
+    }
+    
     private void renderTextToType() {
-        gc.setFill(Color.web("#C7E2F5"));
-        gc.fillRoundRect(50, gameScene.getHeight() - 100, gameScene.getWidth() - 100, 50, 10, 10);
         gc.setFont(new Font("Lucida Console", 20));
-        gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.CENTER);
 
         StringBuilder displayText = new StringBuilder();
         for (int i = currentWordIndex; i < words.length; i++) {
             displayText.append(words[i]).append(" ");
         }
-        gc.fillText(displayText.toString(), gameScene.getWidth() / 2, gameScene.getHeight() - 70);
+
+        // calculate the maximum width for the text
+        double maxWidth = gameScene.getWidth() - 100;
+
+        // wrap the text into multiple lines if necessary
+        String[] lines = wrapText(displayText.toString(), maxWidth);
+
+        // calculate the height of the text
+        double textHeight = gc.getFont().getSize() * lines.length;
+        double textY = gameScene.getHeight() - 70;
+
+        // calculate the background rectangle dimensions
+        double backgroundWidth = maxWidth;
+        double backgroundHeight = textHeight + 30;
+        double backgroundX = (gameScene.getWidth() - backgroundWidth) / 2;
+        double backgroundY = textY - textHeight / 2 - 20;
+
+        // draw the background rectangle
+        gc.setFill(Color.web("#C7E2F5"));
+        gc.fillRoundRect(backgroundX, backgroundY, backgroundWidth, backgroundHeight, 10, 10);
+
+        // draw the text lines
+        gc.setFill(Color.BLACK);
+        for (int i = 0; i < lines.length; i++) {
+            double lineY = textY + (i - (lines.length - 1) / 2.0) * gc.getFont().getSize();
+            gc.fillText(lines[i], gameScene.getWidth() / 2, lineY);
+        }
     }
     
     private void displayMessage(String message, Color color, int durationInMillis) {
@@ -168,24 +263,24 @@ public class GameTimer extends AnimationTimer {
         System.out.println("Game Over! Your time is up.");
     }
 
-    private void renderTimer(long remainingTime) {
+    private void renderAccuracyMeter() {
         gc.setFill(Color.web("#FFCF11"));
-        gc.fillRoundRect(gameScene.getWidth() - 120, 20, 100, 40, 10, 10);
+        gc.fillRoundRect(gameScene.getWidth() - 180, 20, 160, 40, 10, 10);
         gc.setFont(new Font("Verdana", 16));
         gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText("Time: " + remainingTime + "s", gameScene.getWidth() - 70, 45);
+        double accuracy = calculateAccuracy();
+        gc.fillText("Accuracy: " + String.format("%.2f", accuracy) + "%", gameScene.getWidth() - 100, 45);
     }
     
     private void renderSpeedometer() {
         gc.setFill(Color.web("#FFCF11"));
-        gc.fillRoundRect(20, 20, 300, 40, 10, 10);
+        gc.fillRoundRect(20, 20, 140, 40, 10, 10);
         gc.setFont(new Font("Verdana", 16));
         gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.LEFT);
         double wordsPerMinute = calculateWordsPerMinute();
-        double accuracy = calculateAccuracy();
-        gc.fillText(String.format("Speed: %.0f WPM | Accuracy: %.0f%%", wordsPerMinute, accuracy), 30, 45);
+        gc.fillText(String.format("Speed: %.0f WPM", wordsPerMinute), 30, 45);
     }
 
     private void moveCar() {
@@ -197,7 +292,8 @@ public class GameTimer extends AnimationTimer {
 
             // move the car to the target position
             carUser.move(targetX, (double) words.length);
-
+            
+            
             // check if the current word is fully typed
             if (words[currentWordIndex].isEmpty()) {
                 currentWordIndex++; // Move to the next word
@@ -207,11 +303,31 @@ public class GameTimer extends AnimationTimer {
             carUser.moveToEndOfScreen();
         }
     }
-    
-    private void moveOpponents() {
-    	// TODO: wait to receive packets from other components
-    		// update xPos and yPos if the specific opponent based on packet received
-    	
+   
+    public void moveOpponent(int index, int curr) {
+        //System.out.println("moveOpponent called with index: " + index + ", curr: " + curr);
+        Car opponent = null;
+
+        for (Car car : carOpponents) {
+            if (index == car.getCarID()) {
+                opponent = car;
+                break; // Found the car, no need to continue loop
+            }
+        }
+
+        if (opponent == null) {
+            //System.out.println("Opponent car not found for index: " + index);
+            return;
+        }
+
+        double wordWidth = gameScene.getWidth() / words.length;
+        double targetX = (curr + 1) * wordWidth;
+
+        //System.out.println("Moving opponent car to x position: " + targetX);
+        opponent.move(targetX, words.length);
+
+        // Print the opponent car's new position
+        //System.out.println("Opponent car new position: " + opponent.getXPos());
     }
     
     private double calculateWordsPerMinute() {
@@ -239,14 +355,15 @@ public class GameTimer extends AnimationTimer {
                     String currentWord = words[currentWordIndex];
                     if (e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) {
                         // if space/enter is pressed, move to the next word only if the current word is fully typed
-                        if (currentWord.isEmpty()) {
+                        if (currentWord.isEmpty()) {                        	
                             currentWordIndex++;
                             moveCar();
-                            // TODO: send updated xPos and yPos to other players
-                            /* PLACE SOCKET SEND HERE */
                         }
                     } else if (!currentWord.isEmpty()) {
+
                         char typedChar;
+              
+
                         if (e.getCode() == KeyCode.CAPS) {
                             // check if Caps Lock is pressed
                             String text = e.getText();
@@ -269,30 +386,47 @@ public class GameTimer extends AnimationTimer {
                             // ignore if Control key is pressed
                             return;
                         } else {
-                            typedChar = e.getText().charAt(0);
+                            if (e.isShiftDown()) {
+                                // Shift is down, get the uppercase character
+                                typedChar = e.getText().toUpperCase().charAt(0);
+                            } else {
+                                // Shift is not down, use the character as is
+                                typedChar = e.getText().charAt(0);
+                            }
                         }
+                        totalCharactersTyped++;
                         if (currentWord.charAt(0) == typedChar) {
                             // remove the first character from the current word
                             words[currentWordIndex] = currentWord.substring(1);
                             correctCharactersTyped++;
                             // check if the current word is completed
-                            if (currentWord.isEmpty()) {
+                            if (words[currentWordIndex].isEmpty()) {
                                 currentWordIndex++;
                                 moveCar();
-                                // TODO: send updated xPos and yPos to other players
-                                /* PLACE SOCKET SEND HERE */
                             }
                         } else {
                             displayIncorrectKeyMessage();
                         }
                     }
-                }
-
-                if (currentWordIndex == words.length) {
-                    displayRaceCompleteMessage();
-                    stop();
-                    gameScene.setOnKeyPressed(null);
-                    handleGameOverKeyPress();
+                    
+                    if (isMultiplayer == true) {
+                    	 String message = "updatePosition:"+ Integer.toString(userID) + ":" + currentWordIndex;
+                           byte[] fetchMsg = message.getBytes();
+                           DatagramPacket fetchSend = new DatagramPacket(fetchMsg, fetchMsg.length, address, SERVER_PORT);
+                           try {
+       						socket.send(fetchSend);
+       					} catch (IOException e1) {
+       						// TODO Auto-generated catch block
+       						e1.printStackTrace();
+       					}
+                    }
+                    // check if the entire sentence is typed correctly
+                    if (currentWordIndex == words.length) {
+                        displayRaceCompleteMessage();
+                        stop();
+                        gameScene.setOnKeyPressed(null);
+                        handleGameOverKeyPress();
+                    }
                 }
             }
         });
@@ -318,6 +452,19 @@ public class GameTimer extends AnimationTimer {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
+                	// remove the player from the player list in the server
+                	String message = "disconnectGameEnd;";
+                	byte[] data = message.getBytes();
+                	DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+                	try {
+                		socket.send(packet);
+                	} catch (IOException err) {
+                		err.printStackTrace();
+                	} finally {
+                		if (socket != null && !socket.isClosed()) {
+                			socket.close();
+                		}    		
+                	}
                     // return to the main menu
                     Game game = new Game();
                     game.setStage(stage);
@@ -327,7 +474,7 @@ public class GameTimer extends AnimationTimer {
 
         // TODO: RANK based on player's rank (1st,2nd,3rd,etc.)
         // display game over popup with stats
-        String gameOverStats = String.format("Time Elapsed: %d seconds\nWords Per Minute: %.2f", gameDuration - remainingTime, calculateWordsPerMinute());
+        String gameOverStats = String.format("Words Per Minute: %.2f\nAccuracy: %.2f%%", calculateWordsPerMinute(), calculateAccuracy());
         displayGameOverPopup(gameOverStats);
     }
 
@@ -339,8 +486,17 @@ public class GameTimer extends AnimationTimer {
         Rectangle background = new Rectangle(gameScene.getWidth(), gameScene.getHeight(), Color.rgb(0, 0, 0, 0.7));
         popupGroup.getChildren().add(background);
 
+        // modify the gameOverStats string to display only words per minute and accuracy
+        String[] statsLines = gameOverStats.split("\n");
+        String modifiedStats = "";
+        for (String line : statsLines) {
+            if (line.startsWith("Words Per Minute") || line.startsWith("Accuracy")) {
+                modifiedStats += line + "\n";
+            }
+        }
+
         // text to display game over stats
-        Text statsText = new Text(gameOverStats);
+        Text statsText = new Text(modifiedStats);
         statsText.setFont(Font.font("Verdana", FontWeight.BOLD, 24));
         statsText.setFill(Color.WHITE);
         statsText.setTextAlignment(TextAlignment.CENTER);
