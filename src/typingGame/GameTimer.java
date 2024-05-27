@@ -62,14 +62,28 @@ public class GameTimer extends AnimationTimer {
         this.totalPlayers = readyClients;
         this.userID = userID;
         
+//        int xPos = 20;
+//        for (int i=1; i<totalPlayers+1; i++) {
+//        	int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
+//        	if (this.userID == i) {
+//        		this.carUser = new Car(xPos, yPos, userID);        		
+//        	} else {        		
+//        		carOpponents.add(new Car(xPos, yPos, i));
+//        	}
+//        }
+        
         int xPos = 20;
-        for (int i=1; i<totalPlayers+1; i++) {
-        	int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
-        	if (this.userID == i) {
-        		this.carUser = new Car(xPos, yPos, userID);        		
-        	} else {        		
-        		carOpponents.add(new Car(xPos, yPos, i));
-        	}
+        int ySpacing = 80; // Adjust this value to control the vertical spacing between cars
+        int totalHeight = (totalPlayers - 1) * ySpacing;
+        int startY = (Constants.WINDOW_HEIGHT - totalHeight) / 2;
+
+        for (int i = 1; i <= totalPlayers; i++) {
+            int yPos = startY + (i - 1) * ySpacing;
+            if (this.userID == i) {
+                this.carUser = new Car(xPos, yPos, userID);
+            } else {
+                carOpponents.add(new Car(xPos, yPos, i));
+            }
         }
 
         // methods ran at the start of GameTimer
@@ -124,10 +138,32 @@ public class GameTimer extends AnimationTimer {
         gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
     }
 
+//    private void renderCars() {
+//        carUser.render(gc);
+//        for (Car car : carOpponents) {
+//        	car.render(gc);
+//        }
+//    }
+    
     private void renderCars() {
+        // Render road images
+        for (int i = 0; i < totalPlayers; i++) {
+            int yPos;
+            if (i == userID - 1) {
+                yPos = (int) carUser.getYPos();
+            } else if (i < carOpponents.size()) {
+                yPos = (int) carOpponents.get(i).getYPos();
+            } else {
+                continue; // Skip rendering road if opponent car doesn't exist
+            }
+            Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight() / totalPlayers, false, false);
+            gc.drawImage(roadImage, 0, yPos - (gameScene.getHeight() / totalPlayers) / 2);
+        }
+
+        // Render cars
         carUser.render(gc);
         for (Car car : carOpponents) {
-        	car.render(gc);
+            car.render(gc);
         }
     }
 
@@ -257,7 +293,11 @@ public class GameTimer extends AnimationTimer {
             carUser.moveToEndOfScreen();
             
             // send the updated position to the server
-            chatClient.sendPositionUpdate(carUser.getXPos(), carUser.getYPos());
+//            chatClient.sendPositionUpdate(carUser.getXPos(), carUser.getYPos());
+            // send the updated position to the server only if chatClient is not null
+            if (chatClient != null) {
+                chatClient.sendPositionUpdate(carUser.getXPos(), carUser.getYPos());
+            }
         }
     }
     
@@ -389,6 +429,11 @@ public class GameTimer extends AnimationTimer {
                 }
             }
         });
+        
+        // send the score to the server
+        if (chatClient != null) {
+            chatClient.sendScore(calculateWordsPerMinute(), calculateAccuracy());
+        }
 
         // TODO: RANK based on player's rank (1st,2nd,3rd,etc.)
         // display game over popup with stats

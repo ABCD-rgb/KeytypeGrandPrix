@@ -340,6 +340,19 @@ public class ChatClient {
         });
     }
     
+    // method to save the player's score
+    public void sendScore(double wordsPerMinute, double accuracy) {
+        String message = "score;" + identifier + ";" + wordsPerMinute + ";" + accuracy;
+        byte[] data = message.getBytes();
+        DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+        try {
+            socket.send(packet);
+            System.out.println("Score sent to server: " + message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
     // Method to disconnect from the server
     public void disconnect() {
     	// remove the player from the player list in the server

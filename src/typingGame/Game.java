@@ -13,16 +13,22 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import typingGame.QuoteFetcher;
-
+import java.io.IOException;
 import java.net.*;
 import java.util.Optional;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 
 /* This Class is an entry point for different scenes */
@@ -39,6 +45,9 @@ public class Game {
     private Button b2;
     private Button b3;
     private String textToType;
+    private DatagramSocket socket;
+    private InetAddress address;
+    private static final int SERVER_PORT = Constants.PORT;
 
 	public Game() {
 		this.canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
@@ -48,10 +57,25 @@ public class Game {
 		this.root.getChildren().add(this.canvas);
 		this.gameScene = new Scene(this.root);
 		this.shadow = new DropShadow();
+		
+		try {
+            socket = new DatagramSocket();
+            address = InetAddress.getByName(Constants.IP);
+        } catch (SocketException | UnknownHostException e) {
+            e.printStackTrace();
+        }
+		
 		fetchTextToType();
 	}
 	
-	
+	private ImageView createBackgroundImage() {
+	    ImageView backgroundImage = new ImageView(Constants.BG_IMG);
+	    backgroundImage.setFitWidth(Constants.WINDOW_WIDTH);
+	    backgroundImage.setFitHeight(Constants.WINDOW_HEIGHT);
+	    backgroundImage.setPreserveRatio(false); // Ensure the image fills the specified dimensions
+	    return backgroundImage;
+	}
+
 	// setting up stage and running the app
 	public void setStage(Stage stage) {
 		this.stage = stage;
@@ -75,22 +99,50 @@ public class Game {
     }
 	
 	// display the main menu
-	private void initMenu(Stage stage) {
-		Canvas canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-		GraphicsContext gc = canvas.getGraphicsContext2D();
-		
-		gc.drawImage(Constants.BG_IMG, 0, 0);
-		
-		// display buttons: "new game", "instructions", "about"
-		VBox menuButtons = this.createMenuButtons();
-		
-		StackPane menuRoot = new StackPane();
-		menuRoot.getChildren().addAll(canvas, menuButtons);
-		this.menuScene = new Scene(menuRoot);
-		
-		stage.setScene(this.menuScene);	// sets the scene to the menu scene
-	}
+//	private void initMenu(Stage stage) {
+//		Canvas canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+//		GraphicsContext gc = canvas.getGraphicsContext2D();
+//		
+//		gc.drawImage(Constants.BG_IMG, 0, 0);
+//		
+//		// display buttons: "new game", "instructions", "leaderboards"
+//		VBox menuButtons = this.createMenuButtons();
+//		
+//		StackPane menuRoot = new StackPane();
+//		menuRoot.getChildren().addAll(canvas, menuButtons);
+//		this.menuScene = new Scene(menuRoot);
+//		
+//		stage.setScene(this.menuScene);	// sets the scene to the menu scene
+//	}
 	
+	private void initMenu(Stage stage) {
+	    StackPane root = new StackPane();
+
+	    ImageView backgroundImage = createBackgroundImage();
+
+	    // Create a canvas to draw additional content, if necessary
+	    Canvas canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+	    GraphicsContext gc = canvas.getGraphicsContext2D();
+	    
+	    // Draw the background image using GraphicsContext
+	    gc.drawImage(Constants.BG_IMG, 0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+
+	    // Display buttons: "new game", "instructions", "leaderboards"
+	    VBox menuButtons = this.createMenuButtons();
+	    
+	    root.getChildren().addAll(backgroundImage, canvas, menuButtons);
+	    
+	    Scene menuScene = new Scene(root, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+	    
+	    // Return to the main screen when Esc key is pressed
+	    menuScene.setOnKeyPressed(event -> {
+	        if (event.getCode() == KeyCode.ESCAPE) {
+	            stage.close(); // Close the application
+	        }
+	    });
+
+	    stage.setScene(menuScene); // Sets the scene to the menu scene
+	}
 	
 	// buttons for the main menu
 	private VBox createMenuButtons() {
@@ -105,7 +157,7 @@ public class Game {
 
 	    b1 = new Button("New Game");
         b2 = new Button("Instructions");
-        b3 = new Button("About");
+        b3 = new Button("Leaderboards");
 
 		Font font = Font.font("Verdana", FontWeight.BOLD, 25);
 		b1.setFont(font);
@@ -144,7 +196,7 @@ public class Game {
             @Override
             public void handle(ActionEvent e) {
                 b3.setEffect(shadow);
-                changeScene(stage, "about");
+                changeScene(stage, "leaderboards");
             }
         });
 
@@ -176,15 +228,15 @@ public class Game {
 		} else if (string.equals("instructions")) {
 			initInstruct(stage);
 		
-		} else if (string.equals("about")) {
-			initAbout(stage);
+		} else if (string.equals("leaderboards")) {
+			initLeaderboards(stage);
 		}
 	}
 	
 	public void initInstruct(Stage stage) {
 		StackPane root = new StackPane();
 
-	    ImageView backgroundImage = new ImageView(Constants.BG_IMG);
+		ImageView backgroundImage = createBackgroundImage();
 	    
 	    VBox content = new VBox();
 	    content.setAlignment(Pos.CENTER);
@@ -252,12 +304,74 @@ public class Game {
 	    stage.setScene(instructionsScene);
 	}
 	
-	
-	// TODO: about scene
-	public void initAbout(Stage stage) {
-		
+	public void initLeaderboards(Stage stage) {
+	    StackPane root = new StackPane();
+
+	    ImageView backgroundImage = createBackgroundImage();
+	    
+	    BorderPane content = new BorderPane();
+	    content.setMaxWidth(800);
+	    content.setMaxHeight(600);
+
+	    VBox topContent = new VBox();
+	    topContent.setAlignment(Pos.CENTER);
+	    topContent.setSpacing(20);
+	    topContent.setPadding(new Insets(50, 0, 20, 0));
+
+	    Font titleFont = Font.font("Verdana", FontWeight.BOLD, 30);
+	    Font bodyFont = Font.font("Verdana", 16);
+
+	    Constants.LOGO.setFitWidth(150);
+	    Constants.LOGO.setFitHeight(50);
+
+	    Label leaderboardsHeading = new Label("Leaderboards");
+	    leaderboardsHeading.setFont(titleFont);
+
+	    topContent.getChildren().addAll(Constants.LOGO, leaderboardsHeading);
+
+	    VBox leaderboardsBox = new VBox();
+	    leaderboardsBox.setSpacing(10);
+	    leaderboardsBox.setPadding(new Insets(20));
+	    leaderboardsBox.setStyle("-fx-background-color: white; -fx-background-radius: 10px;");
+	    leaderboardsBox.setMaxWidth(600);
+	    leaderboardsBox.setMaxHeight(300);
+	    leaderboardsBox.setAlignment(Pos.CENTER);
+
+	    // Fetch leaderboard data from the server and populate the leaderboardsBox
+	    fetchLeaderboardData(leaderboardsBox);
+
+	    VBox centerContent = new VBox(leaderboardsBox);
+	    centerContent.setAlignment(Pos.CENTER);
+	    centerContent.setStyle("-fx-background-radius: 30px; -fx-background-color: white;");
+	    centerContent.setMaxWidth(600);
+	    centerContent.setMaxHeight(300);
+
+	    VBox bottomContent = new VBox();
+	    bottomContent.setAlignment(Pos.CENTER);
+	    bottomContent.setPadding(new Insets(20, 0, 50, 0));
+
+	    Label returnText = new Label("Press [ESC] to return to the main menu");
+	    returnText.setFont(bodyFont);
+
+	    bottomContent.getChildren().add(returnText);
+
+	    content.setTop(topContent);
+	    content.setCenter(centerContent);
+	    content.setBottom(bottomContent);
+
+	    root.getChildren().addAll(backgroundImage, content);
+
+	    Scene leaderboardsScene = new Scene(root, 800, 600);
+	    
+	    // Return to the main screen when Esc key is pressed
+	    leaderboardsScene.setOnKeyPressed(event -> {
+	        if (event.getCode() == KeyCode.ESCAPE) {
+	            initMenu(stage); // Call the initMenu method to reinitialize the main menu
+	        }
+	    });
+	    
+	    stage.setScene(leaderboardsScene);
 	}
-	
 	
 	// chat scene --> chats between players who joined	
 	public void initChat(Stage stage) {
@@ -376,5 +490,57 @@ public class Game {
 	        ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
 	        chatClient.runChat();
 	    });
+	}
+	
+	private void fetchLeaderboardData(VBox leaderboardsBox) {
+	    // clear the existing scores
+	    leaderboardsBox.getChildren().clear();
+
+	    // Send a request to the server to fetch the leaderboard data
+	    String message = "getLeaderboard";
+	    byte[] data = message.getBytes();
+	    DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+	    try {
+	        socket.send(packet);
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+
+	    // Receive the leaderboard data from the server
+	    byte[] buffer = new byte[1024];
+	    DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
+	    try {
+	        socket.receive(receivePacket);
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+
+	    String leaderboardData = new String(receivePacket.getData(), 0, receivePacket.getLength());
+	    String[] playerScores = leaderboardData.split("\\|");
+
+	    if (playerScores.length > 0 && !playerScores[0].isEmpty()) {
+	        // Populate the leaderboardsBox with the received data
+	        int count = 0;
+	        for (String playerScore : playerScores) {
+	            if (count >= 10) {
+	                break; // Limit to 10 entries
+	            }
+	            String[] parts = playerScore.split(";");
+	            if (parts.length == 3) {
+	                String identifier = parts[0];
+	                double wordsPerMinute = Double.parseDouble(parts[1]);
+	                double accuracy = Double.parseDouble(parts[2]);
+	                Label scoreLabel = new Label(String.format("%s - %d wpm, %.0f%% accuracy", identifier, (int)wordsPerMinute, accuracy));
+	                scoreLabel.setFont(Font.font("Verdana", 16));
+	                leaderboardsBox.getChildren().add(scoreLabel);
+	                count++;
+	            }
+	        }
+	    } else {
+	        // Display a message when no scores are available
+	        Label noScoresLabel = new Label("No scores available.");
+	        noScoresLabel.setFont(Font.font("Verdana", 16));
+	        leaderboardsBox.getChildren().add(noScoresLabel);
+	    }
 	}
 }
