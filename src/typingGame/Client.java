@@ -32,7 +32,7 @@ import java.util.Map;
 /* This Class is the client-logic (sends and receives data using the server as the middleman) */
 
 
-public class ChatClient {
+public class Client {
     private DatagramSocket socket;	// socket to send and receive data
     private InetAddress address;	// address of the server
     private static final int SERVER_PORT = Constants.PORT; // port number for the server
@@ -46,7 +46,7 @@ public class ChatClient {
     private boolean isReady;
 	private GameTimer gameTimer;
 
-    public ChatClient(Scene gameScene, GraphicsContext gc, Stage stage, String username) {
+    public Client(Scene gameScene, GraphicsContext gc, Stage stage, String username) {
         this.gameScene = gameScene;
         this.gc = gc;
         this.stage = stage;
@@ -57,24 +57,25 @@ public class ChatClient {
     
     
     // Method to connect to the server
-//    public void connect() {
-//        try {
-//            socket = new DatagramSocket(); // init on any available port
-//            address = InetAddress.getByName(Constants.IP);
-//        } catch (SocketException | UnknownHostException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
     public void connect() {
         try {
-            if (socket == null) {
-                socket = new DatagramSocket(); // init on any available port
-            }
+            socket = new DatagramSocket(); // init on any available port
             address = InetAddress.getByName(Constants.IP);
         } catch (SocketException | UnknownHostException e) {
             throw new RuntimeException(e);
         }
     }
+    
+//    public void connect() {
+//        try {
+//            if (socket == null) {
+//                socket = new DatagramSocket(); // init on any available port
+//            }
+//            address = InetAddress.getByName(Constants.IP);
+//        } catch (SocketException | UnknownHostException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
     
     public GameTimer getGameTimer() {
     	return this.gameTimer;
@@ -233,11 +234,9 @@ public class ChatClient {
         Platform.runLater(() -> {
             GraphicsContext gc = this.gc;
             gc.clearRect(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-            messageBox.getChildren().clear(); // Clear the chat messages
             stage.setScene(gameScene);
-            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, socket, address);
-            setGameTimer(gameTimer);
-            gameTimer.start();
+            this.gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, this.socket, this.address);
+            this.gameTimer.start();
         });
     }
 //    
@@ -355,13 +354,27 @@ public class ChatClient {
     
     // Method to disconnect from the server
     public void disconnect() {
-        if (socket != null) {
-            socket.close();
-        }
+    	// remove the player from the player list in the server
+    	String message = "disconnect;"+this.identifier+";"+this.isReady;
+    	byte[] data = message.getBytes();
+    	DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+    	try {
+    		socket.send(packet);
+    	} catch (IOException e) {
+    		e.printStackTrace();
+    	} finally {
+    		if (socket != null && !socket.isClosed()) {
+    			socket.close();
+    		}    		
+    	}
+    	
     }
     
     public void setGameTimer(GameTimer gameTimer) {
         this.gameTimer = gameTimer;
     }
+    
+	public String getIdentifer() {
+		return this.identifier;
+	}
 }
-

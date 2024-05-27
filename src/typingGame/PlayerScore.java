@@ -1,12 +1,12 @@
 package typingGame;
 
 public class PlayerScore implements Comparable<PlayerScore> {
-    String identifier;
+	String username;
     double wordsPerMinute;
     double accuracy;
 
-    public PlayerScore(String identifier, double wordsPerMinute, double accuracy) {
-        this.identifier = identifier;
+    public PlayerScore(String username, double wordsPerMinute, double accuracy) {
+        this.username = username;
         this.wordsPerMinute = wordsPerMinute;
         this.accuracy = accuracy;
     }
@@ -21,8 +21,8 @@ public class PlayerScore implements Comparable<PlayerScore> {
         }
     }
     
-    public String getIdentifier() {
-        return identifier;
+    public String getUsername() {
+        return username;
     }
 
     public double getWordsPerMinute() {

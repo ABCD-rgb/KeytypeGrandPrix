@@ -51,27 +51,27 @@ public class GameTimer extends AnimationTimer {
     private int totalPlayers;
     private int userID;
     private boolean isMultiplayer;
-        
-    // New constructor with socket and address parameters
+    
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address) {
-        this.gc = gc;
+//      this.gameDuration = calculateGameDuration(textToType);
+//      this.timerText = new Text();
+//      this.timerText.setFont(Font.font("Verdana", 16));
+//      this.timerText.setFill(Color.WHITE);
+//      this.isMultiplayer = false;
+    	this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
         this.words = textToType.split("\\s+");
-        this.gameDuration = calculateGameDuration(textToType);
-        this.timerText = new Text();
-        this.timerText.setFont(Font.font("Verdana", 16));
-        this.timerText.setFill(Color.WHITE);
         this.currentWordIndex = 0;
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
-        this.isMultiplayer = true;
+        this.isMultiplayer = (socket != null && address != null);
         this.totalPlayers = readyClients;
         this.userID = userID;
 
         int xPos = 20;
-        int ySpacing = 80; // Adjust this value to control the vertical spacing between cars
+        int ySpacing = 50;
         int totalHeight = (totalPlayers - 1) * ySpacing;
         int startY = (Constants.WINDOW_HEIGHT - totalHeight) / 2;
 
@@ -83,12 +83,8 @@ public class GameTimer extends AnimationTimer {
                 carOpponents.add(new Car(xPos, yPos, i));
             }
         }
-
-        // Assign socket and address
-        this.socket = socket;
-        this.address = address;
-
-        // Assign socket and address
+        
+        // assign socket and address
         this.socket = socket;
         this.address = address;
 
@@ -101,16 +97,16 @@ public class GameTimer extends AnimationTimer {
     public void handle(long currentNanoTime) {
     	try {
 	        long elapsedTime = currentNanoTime - startTime;
-	        remainingTime = gameDuration - elapsedTime / 1_000_000_000;
-	        
-	        // check if time is up
-	        if (remainingTime <= 0) {
-	            stop(); // stop the game
-	            gameOverMessage(); // display game over message
-	            gameScene.setOnKeyPressed(null);
-	            handleGameOverKeyPress();
-	            return;
-	        }
+//	        remainingTime = gameDuration - elapsedTime / 1_000_000_000;
+//	        
+//	        // check if time is up
+//	        if (remainingTime <= 0) {
+//	            stop(); // stop the game
+//	            gameOverMessage(); // display game over message
+//	            gameScene.setOnKeyPressed(null);
+//	            handleGameOverKeyPress();
+//	            return;
+//	        }
 	
 	        // render background, car, text to type, and timer
 	        this.renderBackground();
@@ -144,31 +140,8 @@ public class GameTimer extends AnimationTimer {
         gc.setFill(Color.web("#A6C9CB"));
         gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
     }
-    
-//    private void renderCars() {
-//        // Render road images
-//        for (int i = 0; i < totalPlayers; i++) {
-//            int yPos;
-//            if (i == userID - 1) {
-//                yPos = (int) carUser.getYPos();
-//            } else if (i < carOpponents.size()) {
-//                yPos = (int) carOpponents.get(i).getYPos();
-//            } else {
-//                continue; // Skip rendering road if opponent car doesn't exist
-//            }
-//            Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight() / totalPlayers, false, false);
-//            gc.drawImage(roadImage, 0, yPos - (gameScene.getHeight() / totalPlayers) / 2);
-//        }
-//
-//        // Render cars
-//        carUser.render(gc);
-//        for (Car car : carOpponents) {
-//            car.render(gc);
-//        }
-//    }
-    
+        
     private void renderCars() {
-        // Render road images
         for (int i = 0; i < totalPlayers; i++) {
             double yPos;
             if (i == userID - 1) {
@@ -182,7 +155,6 @@ public class GameTimer extends AnimationTimer {
             gc.drawImage(roadImage, 0, yPos - Constants.CAR_HEIGHT);
         }
 
-        // Render cars
         carUser.render(gc);
         for (Car car : carOpponents) {
             car.render(gc);
@@ -324,7 +296,7 @@ public class GameTimer extends AnimationTimer {
         for (Car car : carOpponents) {
             if (index == car.getCarID()) {
                 opponent = car;
-                break; // Found the car, no need to continue loop
+                break; // found the car, no need to continue loop
             }
         }
 
@@ -351,7 +323,7 @@ public class GameTimer extends AnimationTimer {
 
     private double calculateAccuracy() {
         if (totalCharactersTyped == 0) {
-            return 0.0; // Return 0 accuracy if no characters are typed
+            return 0.0; // return 0 accuracy if no characters are typed
         }
         return (double) correctCharactersTyped / totalCharactersTyped * 100.0;
     }
@@ -371,8 +343,6 @@ public class GameTimer extends AnimationTimer {
                         if (currentWord.isEmpty()) {                        	
                             currentWordIndex++;
                             moveCar();
-                            // TODO: send updated xPos and yPos to other players
-                            /* PLACE SOCKET SEND HERE */
                         }
                     } else if (!currentWord.isEmpty()) {
                         char typedChar;
@@ -415,8 +385,6 @@ public class GameTimer extends AnimationTimer {
                             if (words[currentWordIndex].isEmpty()) {
                                 currentWordIndex++;
                                 moveCar();
-                                // TODO: send updated xPos and yPos to other players
-                                /* PLACE SOCKET SEND HERE */
                             }
                         } else {
                             displayIncorrectKeyMessage();
@@ -466,13 +434,26 @@ public class GameTimer extends AnimationTimer {
     	gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
+                	// remove the player from the player list in the server
+                	String message = "disconnectGameEnd;";
+                	byte[] data = message.getBytes();
+                	DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+                	try {
+                		socket.send(packet);
+                	} catch (IOException err) {
+                		err.printStackTrace();
+                	} finally {
+                		if (socket != null && !socket.isClosed()) {
+                			socket.close();
+                		}
+                	}
                     // return to the main menu
                     Game game = new Game();
                     game.setStage(stage);
                 }
             }
         });
-
+    	
         // Send the score to the server
         if (isMultiplayer) {
             String message = "score:" + userID + ":" + calculateWordsPerMinute() + ":" + calculateAccuracy();
@@ -483,6 +464,7 @@ public class GameTimer extends AnimationTimer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+//        	client.sendScore(calculateWordsPerMinute(), calculateAccuracy());
         }
 
         // Display game over popup with stats

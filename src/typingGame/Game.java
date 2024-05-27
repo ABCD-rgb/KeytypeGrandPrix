@@ -72,7 +72,7 @@ public class Game {
 	    ImageView backgroundImage = new ImageView(Constants.BG_IMG);
 	    backgroundImage.setFitWidth(Constants.WINDOW_WIDTH);
 	    backgroundImage.setFitHeight(Constants.WINDOW_HEIGHT);
-	    backgroundImage.setPreserveRatio(false); // Ensure the image fills the specified dimensions
+	    backgroundImage.setPreserveRatio(false);
 	    return backgroundImage;
 	}
 
@@ -99,49 +99,33 @@ public class Game {
     }
 	
 	// display the main menu
-//	private void initMenu(Stage stage) {
-//		Canvas canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-//		GraphicsContext gc = canvas.getGraphicsContext2D();
-//		
-//		gc.drawImage(Constants.BG_IMG, 0, 0);
-//		
-//		// display buttons: "new game", "instructions", "leaderboards"
-//		VBox menuButtons = this.createMenuButtons();
-//		
-//		StackPane menuRoot = new StackPane();
-//		menuRoot.getChildren().addAll(canvas, menuButtons);
-//		this.menuScene = new Scene(menuRoot);
-//		
-//		stage.setScene(this.menuScene);	// sets the scene to the menu scene
-//	}
-	
 	private void initMenu(Stage stage) {
 	    StackPane root = new StackPane();
 
 	    ImageView backgroundImage = createBackgroundImage();
 
-	    // Create a canvas to draw additional content, if necessary
+	    // create a canvas to draw additional content, if necessary
 	    Canvas canvas = new Canvas(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 	    GraphicsContext gc = canvas.getGraphicsContext2D();
 	    
-	    // Draw the background image using GraphicsContext
+	    // draw the background image using GraphicsContext
 	    gc.drawImage(Constants.BG_IMG, 0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 
-	    // Display buttons: "new game", "instructions", "leaderboards"
+	    // display buttons: "new game", "instructions", "leaderboards"
 	    VBox menuButtons = this.createMenuButtons();
 	    
 	    root.getChildren().addAll(backgroundImage, canvas, menuButtons);
 	    
 	    Scene menuScene = new Scene(root, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 	    
-	    // Return to the main screen when Esc key is pressed
+	    // return to the main screen when Esc key is pressed
 	    menuScene.setOnKeyPressed(event -> {
 	        if (event.getCode() == KeyCode.ESCAPE) {
-	            stage.close(); // Close the application
+	            stage.close(); // close the application
 	        }
 	    });
 
-	    stage.setScene(menuScene); // Sets the scene to the menu scene
+	    stage.setScene(menuScene); // sets the scene to the menu scene
 	}
 	
 	// buttons for the main menu
@@ -363,10 +347,10 @@ public class Game {
 
 	    Scene leaderboardsScene = new Scene(root, 800, 600);
 	    
-	    // Return to the main screen when Esc key is pressed
+	    // return to the main screen when Esc key is pressed
 	    leaderboardsScene.setOnKeyPressed(event -> {
 	        if (event.getCode() == KeyCode.ESCAPE) {
-	            initMenu(stage); // Call the initMenu method to reinitialize the main menu
+	            initMenu(stage); // call the initMenu method to reinitialize the main menu
 	        }
 	    });
 	    
@@ -415,7 +399,7 @@ public class Game {
 	        String username = usernameField.getText().trim();
 	        if (!username.isEmpty()) {
 	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            Client chatClient = new Client(gameScene, gc, stage, username);
 	            chatClient.runChat();
 	        }
 	    });
@@ -426,7 +410,7 @@ public class Game {
 	        String username = usernameField.getText().trim();
 	        if (!username.isEmpty()) {
 	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            Client chatClient = new Client(gameScene, gc, stage, username);
 	            chatClient.runChat();
 	        }
 	    });
@@ -449,10 +433,6 @@ public class Game {
 	    Scene chatScene = new Scene(root, 800, 600);
         chatScene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
-                ChatClient chatClient = (ChatClient) stage.getUserData();
-                if (chatClient != null) {
-                    chatClient.disconnect();
-                }
                 initMenu(stage);
             }
         });
@@ -492,7 +472,7 @@ public class Game {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(username -> {
             GraphicsContext gc = this.canvas.getGraphicsContext2D();
-            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+            Client chatClient = new Client(gameScene, gc, stage, username);
             chatClient.runChat();
         });
     }
@@ -501,7 +481,7 @@ public class Game {
 	    // clear the existing scores
 	    leaderboardsBox.getChildren().clear();
 
-	    // Send a request to the server to fetch the leaderboard data
+	    // send a request to the server to fetch the leaderboard data
 	    String message = "getLeaderboard";
 	    byte[] data = message.getBytes();
 	    DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
@@ -511,7 +491,7 @@ public class Game {
 	        e.printStackTrace();
 	    }
 
-	    // Receive the leaderboard data from the server
+	    // receive the leaderboard data from the server
 	    byte[] buffer = new byte[1024];
 	    DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
 	    try {
@@ -524,25 +504,27 @@ public class Game {
 	    String[] playerScores = leaderboardData.split("\\|");
 
 	    if (playerScores.length > 0 && !playerScores[0].isEmpty()) {
-	        // Populate the leaderboardsBox with the received data
+	        // populate the leaderboardsBox with the received data
 	        int count = 0;
 	        for (String playerScore : playerScores) {
 	            if (count >= 10) {
-	                break; // Limit to 10 entries
+	                break;
 	            }
 	            String[] parts = playerScore.split(";");
 	            if (parts.length == 3) {
-	                String identifier = parts[0];
+	                String username = parts[0];
 	                double wordsPerMinute = Double.parseDouble(parts[1]);
 	                double accuracy = Double.parseDouble(parts[2]);
-	                Label scoreLabel = new Label(String.format("%s - %d wpm, %.0f%% accuracy", identifier, (int)wordsPerMinute, accuracy));
+	                Label scoreLabel = new Label(String.format("%s - %d wpm, %.0f%% accuracy", username, (int)wordsPerMinute, accuracy));
 	                scoreLabel.setFont(Font.font("Verdana", 16));
 	                leaderboardsBox.getChildren().add(scoreLabel);
 	                count++;
 	            }
 	        }
-	    } else {
-	        // Display a message when no scores are available
+	    }
+	    
+	    if (leaderboardsBox.getChildren().isEmpty()) {
+	        // display a message when no scores are available
 	        Label noScoresLabel = new Label("No scores available.");
 	        noScoresLabel.setFont(Font.font("Verdana", 16));
 	        leaderboardsBox.getChildren().add(noScoresLabel);

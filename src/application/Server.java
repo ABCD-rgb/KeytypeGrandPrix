@@ -17,7 +17,7 @@ import java.util.List;
 /* This Class runs the server (to allow multiplayer connection) */
 
 
-public class ChatServer {
+public class Server {
 	private static DatagramSocket socket;	
 	private static final int PORT = Constants.PORT;	// port number for the server socket
 	private static final InetAddress address;
@@ -103,21 +103,23 @@ public class ChatServer {
     		
     		// when player has finished typing, send the score to the server
     		else if (message.startsWith("score:")) {
-    	        String[] parts = message.split(":");
-    	        int userID = Integer.parseInt(parts[1]);
-    	        double wordsPerMinute = Double.parseDouble(parts[2]);
-    	        double accuracy = Double.parseDouble(parts[3]);
-    	        PlayerScore playerScore = new PlayerScore(Integer.toString(userID), wordsPerMinute, accuracy);
-    	        leaderboard.add(playerScore);
-    	        Collections.sort(leaderboard);
-    	    }
+    		    String[] parts = message.split(":");
+    		    if (parts.length == 4) {
+    		        String username = parts[1];
+    		        double wordsPerMinute = Double.parseDouble(parts[2]);
+    		        double accuracy = Double.parseDouble(parts[3]);
+    		        PlayerScore playerScore = new PlayerScore(username, wordsPerMinute, accuracy);
+    		        leaderboard.add(playerScore);
+    		        Collections.sort(leaderboard);
+    		    }
+    		}
     		
     		// when client wants to view the leaderboards
     		else if (message.equals("getLeaderboard")) {
     	        // prepare the leaderboard data to send back to the client
     	        StringBuilder leaderboardData = new StringBuilder();
     	        for (PlayerScore playerScore : leaderboard) {
-    	            leaderboardData.append(playerScore.getIdentifier()).append(";")
+    	            leaderboardData.append(playerScore.getUsername()).append(";")
     	                    .append(playerScore.getWordsPerMinute()).append(";")
     	                    .append(playerScore.getAccuracy()).append("|");
     	        }
@@ -224,6 +226,11 @@ public class ChatServer {
         		        }
         		    }
         		    previousChats.add(exitMessage); // store the enter message in the list
+    		    } else if (message.startsWith("disconnectGameEnd;")) {
+    		    	// remove instance of player server's storage
+    		    	readyClients--;
+    		    	players.remove(Integer.valueOf(userPort)); 	
+        		    previousChats.clear(); // store the enter message in the list
     		    } else {
     		    	// forward to all other players (except the one who sent the message)
         		    for (int forward_port : players) {
