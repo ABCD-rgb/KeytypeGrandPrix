@@ -326,7 +326,13 @@ public class GameTimer extends AnimationTimer {
                             // ignore if Control key is pressed
                             return;
                         } else {
-                            typedChar = e.getText().charAt(0);
+                            if (e.isShiftDown()) {
+                                // Shift is down, get the uppercase character
+                                typedChar = e.getText().toUpperCase().charAt(0);
+                            } else {
+                                // Shift is not down, use the character as is
+                                typedChar = e.getText().charAt(0);
+                            }
                         }
                         if (currentWord.charAt(0) == typedChar) {
                             // remove the first character from the current word

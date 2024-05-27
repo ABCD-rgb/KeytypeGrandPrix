@@ -34,6 +34,10 @@ public class ClientThread extends Thread {
         System.out.println("starting thread");
         
         while (true) {
+        	try{
+				Thread.sleep(1);
+			}catch(Exception ioe){}
+        	
             DatagramPacket packet = new DatagramPacket(incoming, incoming.length);
             try {
                 socket.receive(packet);    // receive packet
