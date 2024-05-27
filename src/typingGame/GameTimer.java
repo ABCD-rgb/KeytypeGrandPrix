@@ -358,8 +358,6 @@ public class GameTimer extends AnimationTimer {
                         if (currentWord.isEmpty()) {                        	
                             currentWordIndex++;
                             moveCar();
-                            // TODO: send updated xPos and yPos to other players
-                            /* PLACE SOCKET SEND HERE */
                         }
                     } else if (!currentWord.isEmpty()) {
 
@@ -405,8 +403,6 @@ public class GameTimer extends AnimationTimer {
                             if (words[currentWordIndex].isEmpty()) {
                                 currentWordIndex++;
                                 moveCar();
-                                // TODO: send updated xPos and yPos to other players
-                                /* PLACE SOCKET SEND HERE */
                             }
                         } else {
                             displayIncorrectKeyMessage();
@@ -456,6 +452,19 @@ public class GameTimer extends AnimationTimer {
         gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
+                	// remove the player from the player list in the server
+                	String message = "disconnectGameEnd;";
+                	byte[] data = message.getBytes();
+                	DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+                	try {
+                		socket.send(packet);
+                	} catch (IOException err) {
+                		err.printStackTrace();
+                	} finally {
+                		if (socket != null && !socket.isClosed()) {
+                			socket.close();
+                		}    		
+                	}
                     // return to the main menu
                     Game game = new Game();
                     game.setStage(stage);

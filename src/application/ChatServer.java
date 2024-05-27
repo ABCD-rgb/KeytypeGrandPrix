@@ -185,6 +185,11 @@ public class ChatServer {
         		        }
         		    }
         		    previousChats.add(exitMessage); // store the enter message in the list
+    		    } else if (message.startsWith("disconnectGameEnd;")) {
+    		    	// remove instance of player server's storage
+    		    	readyClients--;
+    		    	players.remove(Integer.valueOf(userPort)); 	
+        		    previousChats.clear(); // store the enter message in the list
     		    } else {
     		    	// forward to all other players (except the one who sent the message)
         		    for (int forward_port : players) {
