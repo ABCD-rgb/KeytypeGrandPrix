@@ -1,7 +1,12 @@
 package typingGame;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
@@ -29,7 +34,6 @@ public class GameTimer extends AnimationTimer {
     private Scene gameScene;
     private Stage stage;
     private long startTime;
-    private String textToType;
     private long gameDuration;
     private long remainingTime;
     private Text timerText;
@@ -38,17 +42,21 @@ public class GameTimer extends AnimationTimer {
     private int totalCharactersTyped;
     private int correctCharactersTyped;
     // data for multiplayer
+    private DatagramSocket socket;
+    private InetAddress address;	// address of the server
+    private static final int SERVER_PORT = Constants.PORT; // port number for the server
+    
     private Car carUser;
     private List<Car> carOpponents = new ArrayList<>();
     private int totalPlayers;
     private int userID;
-    private ChatClient chatClient;
+    private boolean isMultiplayer;
+
 
     public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID) {
         this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
-        this.textToType = textToType;
         this.words = textToType.split("\\s+");
         this.gameDuration = calculateGameDuration(textToType);
         this.timerText = new Text();
@@ -58,7 +66,7 @@ public class GameTimer extends AnimationTimer {
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
-
+        this.isMultiplayer = false;
         this.totalPlayers = readyClients;
         this.userID = userID;
         
@@ -71,10 +79,47 @@ public class GameTimer extends AnimationTimer {
         		carOpponents.add(new Car(xPos, yPos, i));
         	}
         }
+        
+        // methods ran at the start of GameTimer
+        this.handleKeyPressEvent();
+    }
+    
+    // New constructor with socket and address parameters
+    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address) {
+        this.gc = gc;
+        this.gameScene = gameScene;
+        this.startTime = System.nanoTime();
+        this.words = textToType.split("\\s+");
+        this.gameDuration = calculateGameDuration(textToType);
+        this.timerText = new Text();
+        this.timerText.setFont(Font.font("Verdana", 16));
+        this.timerText.setFill(Color.WHITE);
+        this.currentWordIndex = 0;
+        this.totalCharactersTyped = 0;
+        this.correctCharactersTyped = 0;
+        this.stage = stage;
+        this.isMultiplayer = true;
+        this.totalPlayers = readyClients;
+        this.userID = userID;
+
+        int xPos = 20;
+        for (int i=1; i<totalPlayers+1; i++) {
+            int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
+            if (this.userID == i) {
+                this.carUser = new Car(xPos, yPos, userID);
+            } else {
+                carOpponents.add(new Car(xPos, yPos, i));
+            }
+        }
+
+        // Assign socket and address
+        this.socket = socket;
+        this.address = address;
 
         // methods ran at the start of GameTimer
         this.handleKeyPressEvent();
     }
+
 
     @Override
     public void handle(long currentNanoTime) {
@@ -247,7 +292,8 @@ public class GameTimer extends AnimationTimer {
 
             // move the car to the target position
             carUser.move(targetX, (double) words.length);
-
+            
+            
             // check if the current word is fully typed
             if (words[currentWordIndex].isEmpty()) {
                 currentWordIndex++; // Move to the next word
@@ -255,20 +301,62 @@ public class GameTimer extends AnimationTimer {
         } else {
             // if all words are typed, move the car to the end of the screen
             carUser.moveToEndOfScreen();
-            
-            // send the updated position to the server
-            chatClient.sendPositionUpdate(carUser.getXPos(), carUser.getYPos());
         }
     }
-    
-    private void moveOpponents() {
-    	// TODO: wait to receive packets from other components
-    		// update xPos and yPos if the specific opponent based on packet received
-    	 for (Car opponent : carOpponents) {
-             double wordWidth = gameScene.getWidth() / words.length;
-             double targetX = (currentWordIndex + 1) * wordWidth;
-             opponent.move(targetX, opponent.getYPos());
-         }
+   
+//    public void moveOpponent(int index, int curr) {
+//    	Car opponent = null;
+//    	
+//    	for (Car car: carOpponents) {
+//    		if (index == car.getCarID()) opponent = car;
+//    	}
+//    	
+//    	if (opponent == null) return;
+//    	
+//    	  // move the car only when there are words left to type
+//        if (currentWordIndex < words.length) {
+//            // calculate the target position for the car
+//            double wordWidth = gameScene.getWidth() / words.length;
+//            double targetX = (currentWordIndex + 1) * wordWidth;
+//
+//            // move the car to the target position
+//            opponent.move(targetX, (double) words.length);
+//            
+//            
+//            // check if the current word is fully typed
+//            if (words[currentWordIndex].isEmpty()) {
+//                currentWordIndex++; // Move to the next word
+//            }
+//        } else {
+//            // if all words are typed, move the car to the end of the screen
+//           opponent.moveToEndOfScreen();
+//        }
+//    	
+//    }
+    public void moveOpponent(int index, int curr) {
+        System.out.println("moveOpponent called with index: " + index + ", curr: " + curr);
+        Car opponent = null;
+
+        for (Car car : carOpponents) {
+            if (index == car.getCarID()) {
+                opponent = car;
+                break; // Found the car, no need to continue loop
+            }
+        }
+
+        if (opponent == null) {
+            //System.out.println("Opponent car not found for index: " + index);
+            return;
+        }
+
+        double wordWidth = gameScene.getWidth() / words.length;
+        double targetX = (curr + 1) * wordWidth;
+
+        //System.out.println("Moving opponent car to x position: " + targetX);
+        opponent.move(targetX, words.length);
+
+        // Print the opponent car's new position
+        //System.out.println("Opponent car new position: " + opponent.getXPos());
     }
     
     private double calculateWordsPerMinute() {
@@ -303,7 +391,8 @@ public class GameTimer extends AnimationTimer {
                             /* PLACE SOCKET SEND HERE */
                         }
                     } else if (!currentWord.isEmpty()) {
-                        char typedChar;                        
+                        char typedChar;
+              
                         if (e.getCode() == KeyCode.CAPS) {
                             // check if Caps Lock is pressed
                             String text = e.getText();
@@ -350,7 +439,18 @@ public class GameTimer extends AnimationTimer {
                             displayIncorrectKeyMessage();
                         }
                     }
-
+                    
+                    if (isMultiplayer == true) {
+                    	 String message = "updatePosition:"+ Integer.toString(userID) + ":" + currentWordIndex;
+                           byte[] fetchMsg = message.getBytes();
+                           DatagramPacket fetchSend = new DatagramPacket(fetchMsg, fetchMsg.length, address, SERVER_PORT);
+                           try {
+       						socket.send(fetchSend);
+       					} catch (IOException e1) {
+       						// TODO Auto-generated catch block
+       						e1.printStackTrace();
+       					}
+                    }
                     // check if the entire sentence is typed correctly
                     if (currentWordIndex == words.length) {
                         displayRaceCompleteMessage();
