@@ -48,7 +48,7 @@ public class ClientThread extends Thread {
             String receivedMessage = new String(packet.getData(), 0, packet.getLength());
             //System.out.println(receivedMessage);
             if (receivedMessage.startsWith("updatePosition:")) {
-                System.out.println("Received: " + receivedMessage);
+                //System.out.println("Received: " + receivedMessage);
                 String[] parts = receivedMessage.split(":");
                 if (parts.length == 3) {
                     int enemyIndex = Integer.parseInt(parts[1]);

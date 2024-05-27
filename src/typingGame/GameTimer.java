@@ -304,37 +304,8 @@ public class GameTimer extends AnimationTimer {
         }
     }
    
-//    public void moveOpponent(int index, int curr) {
-//    	Car opponent = null;
-//    	
-//    	for (Car car: carOpponents) {
-//    		if (index == car.getCarID()) opponent = car;
-//    	}
-//    	
-//    	if (opponent == null) return;
-//    	
-//    	  // move the car only when there are words left to type
-//        if (currentWordIndex < words.length) {
-//            // calculate the target position for the car
-//            double wordWidth = gameScene.getWidth() / words.length;
-//            double targetX = (currentWordIndex + 1) * wordWidth;
-//
-//            // move the car to the target position
-//            opponent.move(targetX, (double) words.length);
-//            
-//            
-//            // check if the current word is fully typed
-//            if (words[currentWordIndex].isEmpty()) {
-//                currentWordIndex++; // Move to the next word
-//            }
-//        } else {
-//            // if all words are typed, move the car to the end of the screen
-//           opponent.moveToEndOfScreen();
-//        }
-//    	
-//    }
     public void moveOpponent(int index, int curr) {
-        System.out.println("moveOpponent called with index: " + index + ", curr: " + curr);
+        //System.out.println("moveOpponent called with index: " + index + ", curr: " + curr);
         Car opponent = null;
 
         for (Car car : carOpponents) {
