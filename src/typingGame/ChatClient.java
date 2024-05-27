@@ -32,8 +32,8 @@ import java.util.HashMap;
 
 
 public class ChatClient {
-    private static final DatagramSocket socket;	// socket to send and receive data
-    private static final InetAddress address;	// address of the server
+    private DatagramSocket socket;	// socket to send and receive data
+    private InetAddress address;	// address of the server
     private static final int SERVER_PORT = Constants.PORT; // port number for the server
     
     private String identifier;	// username of the player
@@ -42,32 +42,33 @@ public class ChatClient {
     private Scene gameScene;
     private GraphicsContext gc;
     private Stage stage;
+    private boolean isReady;
     
     private HashMap<Integer, Car> opponentCars = new HashMap<>(); // store opponent cars by their ID
-
-    static {
-        try {
-            socket = new DatagramSocket();	// init on any available port
-        } catch (SocketException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    static {
-        try {
-            address = InetAddress.getByName(Constants.IP);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-    }   
-
+    
+    
     
     public ChatClient(Scene gameScene, GraphicsContext gc, Stage stage, String username) {
         this.gameScene = gameScene;
         this.gc = gc;
         this.stage = stage;
         this.identifier = username;
+        this.isReady = false;
+        connect();
     }
     
+    
+    
+    // Method to connect to the server
+    public void connect() {
+        try {
+            socket = new DatagramSocket(); // init on any available port
+            address = InetAddress.getByName(Constants.IP);
+        } catch (SocketException | UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     
     // method to join the chat room
     public void runChat() {
@@ -153,6 +154,7 @@ public class ChatClient {
         startButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
         startButton.setOnAction(e -> {
         	// send a message to the server to indicate that the player is ready
+        	this.isReady = true;
             String message = identifier + " is ready";
             byte[] msg = message.getBytes();
             DatagramPacket send = new DatagramPacket(msg, msg.length, address, SERVER_PORT);
@@ -205,6 +207,8 @@ public class ChatClient {
         Scene chatScene = new Scene(root, 800, 600);
         chatScene.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ESCAPE) {
+            	disconnect();
+            	// reduce the number of players
                 Game game = new Game();	// return to the main menu when the Escape key is pressed
                 game.setStage(stage);
             }
@@ -322,6 +326,24 @@ public class ChatClient {
                 opponentCar.move(xPos, yPos);
             }
         });
+    }
+    
+    
+    // Method to disconnect from the server
+    public void disconnect() {
+    	// remove the player from the player list in the server
+    	String message = "disconnect;"+this.isReady;
+    	byte[] data = message.getBytes();
+    	DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
+    	try {
+    		socket.send(packet);
+    	} catch (IOException e) {
+    		e.printStackTrace();
+    	}
+    	
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
+        }
     }
 
 }

@@ -165,6 +165,11 @@ public class ChatServer {
     		        }
     		        
     		        previousChats.add(message); // store the ready message in the list
+    		    } else if (message.startsWith("disconnect;")) {
+    		    	String[] parts = message.split(";");
+    		    	boolean isReady = Boolean.parseBoolean(parts[1]);
+    		    	if (isReady) readyClients--;
+    		    	players.remove(Integer.valueOf(userPort)); 	
     		    } else {
     		    	// forward to all other players (except the one who sent the message)
         		    for (int forward_port : players) {
