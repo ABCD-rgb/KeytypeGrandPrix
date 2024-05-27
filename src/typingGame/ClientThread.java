@@ -52,7 +52,6 @@ public class ClientThread extends Thread {
             }
 
             String receivedMessage = new String(packet.getData(), 0, packet.getLength());
-
             if (receivedMessage.startsWith("updatePosition:")) {
                 String[] parts = receivedMessage.split(":");
                 if (parts.length == 3) {

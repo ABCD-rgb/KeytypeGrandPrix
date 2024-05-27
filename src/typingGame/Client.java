@@ -65,7 +65,7 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
-    
+
 //    public void connect() {
 //        try {
 //            if (socket == null) {
