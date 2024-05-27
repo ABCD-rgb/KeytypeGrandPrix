@@ -72,7 +72,8 @@ public class ClientThread extends Thread {
                 } else {
                     System.out.println("Received invalid startGame message: " + receivedMessage);
                 }
-            } else if (receivedMessage.startsWith("fetchResponse:")) { // handle fetch response with chat history
+            } 
+           else if (receivedMessage.startsWith("fetchResponse:")) { // handle fetch response with chat history
                 String[] messages = receivedMessage.substring(14).split("\\|");
                 Platform.runLater(() -> {
                     for (String message : messages) {
@@ -134,6 +135,5 @@ public class ClientThread extends Thread {
 
         return messageBubble;
     }
-    
 
 }

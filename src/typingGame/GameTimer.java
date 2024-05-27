@@ -145,7 +145,7 @@ public class GameTimer extends AnimationTimer {
 	        
 	        this.renderCars();
 	        this.renderTextToType();
-	        this.renderTimer(remainingTime);
+	        this.renderAccuracyMeter();
 	        this.renderSpeedometer();
 	        
     	} catch (Exception e) {
@@ -263,24 +263,24 @@ public class GameTimer extends AnimationTimer {
         System.out.println("Game Over! Your time is up.");
     }
 
-    private void renderTimer(long remainingTime) {
+    private void renderAccuracyMeter() {
         gc.setFill(Color.web("#FFCF11"));
-        gc.fillRoundRect(gameScene.getWidth() - 120, 20, 100, 40, 10, 10);
+        gc.fillRoundRect(gameScene.getWidth() - 180, 20, 160, 40, 10, 10);
         gc.setFont(new Font("Verdana", 16));
         gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText("Time: " + remainingTime + "s", gameScene.getWidth() - 70, 45);
+        double accuracy = calculateAccuracy();
+        gc.fillText("Accuracy: " + String.format("%.2f", accuracy) + "%", gameScene.getWidth() - 100, 45);
     }
     
     private void renderSpeedometer() {
         gc.setFill(Color.web("#FFCF11"));
-        gc.fillRoundRect(20, 20, 300, 40, 10, 10);
+        gc.fillRoundRect(20, 20, 140, 40, 10, 10);
         gc.setFont(new Font("Verdana", 16));
         gc.setFill(Color.BLACK);
         gc.setTextAlign(TextAlignment.LEFT);
         double wordsPerMinute = calculateWordsPerMinute();
-        double accuracy = calculateAccuracy();
-        gc.fillText(String.format("Speed: %.0f WPM | Accuracy: %.0f%%", wordsPerMinute, accuracy), 30, 45);
+        gc.fillText(String.format("Speed: %.0f WPM", wordsPerMinute), 30, 45);
     }
 
     private void moveCar() {
@@ -384,15 +384,17 @@ public class GameTimer extends AnimationTimer {
                     String currentWord = words[currentWordIndex];
                     if (e.getCode() == KeyCode.SPACE || e.getCode() == KeyCode.ENTER) {
                         // if space/enter is pressed, move to the next word only if the current word is fully typed
-                        if (currentWord.isEmpty()) {
+                        if (currentWord.isEmpty()) {                        	
                             currentWordIndex++;
                             moveCar();
                             // TODO: send updated xPos and yPos to other players
                             /* PLACE SOCKET SEND HERE */
                         }
                     } else if (!currentWord.isEmpty()) {
+
                         char typedChar;
               
+
                         if (e.getCode() == KeyCode.CAPS) {
                             // check if Caps Lock is pressed
                             String text = e.getText();
@@ -423,6 +425,7 @@ public class GameTimer extends AnimationTimer {
                                 typedChar = e.getText().charAt(0);
                             }
                         }
+                        totalCharactersTyped++;
                         if (currentWord.charAt(0) == typedChar) {
                             // remove the first character from the current word
                             words[currentWordIndex] = currentWord.substring(1);
@@ -491,7 +494,7 @@ public class GameTimer extends AnimationTimer {
 
         // TODO: RANK based on player's rank (1st,2nd,3rd,etc.)
         // display game over popup with stats
-        String gameOverStats = String.format("Time Elapsed: %d seconds\nWords Per Minute: %.2f", gameDuration - remainingTime, calculateWordsPerMinute());
+        String gameOverStats = String.format("Words Per Minute: %.2f\nAccuracy: %.2f%%", calculateWordsPerMinute(), calculateAccuracy());
         displayGameOverPopup(gameOverStats);
     }
 
@@ -503,8 +506,17 @@ public class GameTimer extends AnimationTimer {
         Rectangle background = new Rectangle(gameScene.getWidth(), gameScene.getHeight(), Color.rgb(0, 0, 0, 0.7));
         popupGroup.getChildren().add(background);
 
+        // modify the gameOverStats string to display only words per minute and accuracy
+        String[] statsLines = gameOverStats.split("\n");
+        String modifiedStats = "";
+        for (String line : statsLines) {
+            if (line.startsWith("Words Per Minute") || line.startsWith("Accuracy")) {
+                modifiedStats += line + "\n";
+            }
+        }
+
         // text to display game over stats
-        Text statsText = new Text(gameOverStats);
+        Text statsText = new Text(modifiedStats);
         statsText.setFont(Font.font("Verdana", FontWeight.BOLD, 24));
         statsText.setFill(Color.WHITE);
         statsText.setTextAlignment(TextAlignment.CENTER);
