@@ -32,7 +32,7 @@ import java.util.Map;
 /* This Class is the client-logic (sends and receives data using the server as the middleman) */
 
 
-public class ChatClient {
+public class Client {
     private DatagramSocket socket;	// socket to send and receive data
     private InetAddress address;	// address of the server
     private static final int SERVER_PORT = Constants.PORT; // port number for the server
@@ -46,7 +46,7 @@ public class ChatClient {
     private boolean isReady;
 	private GameTimer gameTimer;
 
-    public ChatClient(Scene gameScene, GraphicsContext gc, Stage stage, String username) {
+    public Client(Scene gameScene, GraphicsContext gc, Stage stage, String username) {
         this.gameScene = gameScene;
         this.gc = gc;
         this.stage = stage;

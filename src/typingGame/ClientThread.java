@@ -19,10 +19,10 @@ public class ClientThread extends Thread {
     private DatagramSocket socket;	// socket to send and receive data
     private byte[] incoming = new byte[256];	// byte array to store incoming data
     private VBox messageBox;	// message box to display chat messages
-    private ChatClient chatClient;	// chat client object
+    private Client chatClient;	// chat client object
     
     
-    public ClientThread(DatagramSocket socket, VBox messageBox, ChatClient chatClient) {
+    public ClientThread(DatagramSocket socket, VBox messageBox, Client chatClient) {
         this.socket = socket;
         this.messageBox = messageBox;
         this.chatClient = chatClient;

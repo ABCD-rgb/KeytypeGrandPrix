@@ -14,7 +14,7 @@ import java.util.List;
 /* This Class runs the server (to allow multiplayer connection) */
 
 
-public class ChatServer {
+public class Server {
 	private static DatagramSocket socket;	
 	private static final int PORT = Constants.PORT;	// port number for the server socket
 	private static final InetAddress address;

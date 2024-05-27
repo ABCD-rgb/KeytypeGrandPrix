@@ -301,7 +301,7 @@ public class Game {
 	        String username = usernameField.getText().trim();
 	        if (!username.isEmpty()) {
 	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            Client chatClient = new Client(gameScene, gc, stage, username);
 	            chatClient.runChat();
 	        }
 	    });
@@ -312,7 +312,7 @@ public class Game {
 	        String username = usernameField.getText().trim();
 	        if (!username.isEmpty()) {
 	            GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	            ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	            Client chatClient = new Client(gameScene, gc, stage, username);
 	            chatClient.runChat();
 	        }
 	    });
@@ -373,7 +373,7 @@ public class Game {
 	    Optional<String> result = dialog.showAndWait();
 	    result.ifPresent(username -> {
 	        GraphicsContext gc = this.canvas.getGraphicsContext2D();
-	        ChatClient chatClient = new ChatClient(gameScene, gc, stage, username);
+	        Client chatClient = new Client(gameScene, gc, stage, username);
 	        chatClient.runChat();
 	    });
 	}
