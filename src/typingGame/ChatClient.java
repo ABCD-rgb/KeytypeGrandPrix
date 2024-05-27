@@ -256,6 +256,18 @@ public class ChatClient {
         messageBox.getChildren().add(readyMessage);
     }
     
+    // method to display a message that a player is ready
+    public void displayExitMessage(String userName) {
+        Text exitText = new Text(userName + " has disconnected.");
+        exitText.setFill(Color.RED);
+        exitText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        
+        TextFlow exitMessage = new TextFlow(exitText);
+        exitMessage.setTextAlignment(TextAlignment.CENTER);
+        
+        VBox.setMargin(exitMessage, new Insets(10));
+        messageBox.getChildren().add(exitMessage);
+    }
     
     // method to send a message to the server
     private void sendMessage() {
@@ -332,18 +344,19 @@ public class ChatClient {
     // Method to disconnect from the server
     public void disconnect() {
     	// remove the player from the player list in the server
-    	String message = "disconnect;"+this.isReady;
+    	String message = "disconnect;"+this.identifier+";"+this.isReady;
     	byte[] data = message.getBytes();
     	DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
     	try {
     		socket.send(packet);
     	} catch (IOException e) {
     		e.printStackTrace();
+    	} finally {
+    		if (socket != null && !socket.isClosed()) {
+    			socket.close();
+    		}    		
     	}
     	
-        if (socket != null && !socket.isClosed()) {
-            socket.close();
-        }
     }
 
 }

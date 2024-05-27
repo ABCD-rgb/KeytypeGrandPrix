@@ -66,6 +66,9 @@ public class ClientThread extends Thread {
                         } else if (message.endsWith(" is ready")) {
                             String senderName = message.substring(0, message.length() - 9);
                             chatClient.displayReadyMessage(senderName); // display ready message
+                        } else if (message.endsWith(" has disconnected.")) {
+                        	String senderName = message.substring(0, message.length() - 9);
+                        	chatClient.displayExitMessage(senderName);
                         }
                     }
                 });

@@ -166,10 +166,26 @@ public class ChatServer {
     		        
     		        previousChats.add(message); // store the ready message in the list
     		    } else if (message.startsWith("disconnect;")) {
+    		    	// remove instance of player server's storage
     		    	String[] parts = message.split(";");
-    		    	boolean isReady = Boolean.parseBoolean(parts[1]);
+    		    	boolean isReady = Boolean.parseBoolean(parts[2]);
     		    	if (isReady) readyClients--;
     		    	players.remove(Integer.valueOf(userPort)); 	
+    		    	
+    		    	// forward player disconnection to other players
+        		    String exitMessage = parts[1] + " has disconnected.";
+        		    byte[] exitBytes = exitMessage.getBytes();
+        		    for (int forward_port : players) {
+        		        if (forward_port != userPort) {
+        		            DatagramPacket exitPacket = new DatagramPacket(exitBytes, exitBytes.length, packet.getAddress(), forward_port);
+        		            try {
+        		                socket.send(exitPacket);
+        		            } catch (IOException e) {
+        		                throw new RuntimeException(e);
+        		            }
+        		        }
+        		    }
+        		    previousChats.add(exitMessage); // store the enter message in the list
     		    } else {
     		    	// forward to all other players (except the one who sent the message)
         		    for (int forward_port : players) {
