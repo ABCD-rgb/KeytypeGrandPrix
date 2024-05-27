@@ -340,7 +340,6 @@ public class ChatClient {
         });
     }
     
-    
     // Method to disconnect from the server
     public void disconnect() {
     	// remove the player from the player list in the server

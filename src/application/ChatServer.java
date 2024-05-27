@@ -61,7 +61,6 @@ public class ChatServer {
             
             // forward position update messages to all clients
             if (message.startsWith("updatePosition:")) {
-                // Forward position update messages to all clients
                 for (int forward_port : players) {
                     if (forward_port != userPort) {
                         DatagramPacket forwardPacket = new DatagramPacket(byteMessage, byteMessage.length, packet.getAddress(), forward_port);

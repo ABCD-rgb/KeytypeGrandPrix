@@ -60,6 +60,8 @@ public class ClientThread extends Thread {
                 } else {
                     System.out.println("Received invalid startGame message: " + receivedMessage);
                 }
+            } else if (receivedMessage.startsWith("updatePosition:")) {
+                handlePositionUpdate(receivedMessage); // handle position update for opponent's car
             } else if (receivedMessage.startsWith("fetchResponse:")) { // handle fetch response with chat history
                 String[] messages = receivedMessage.substring(14).split("\\|");
                 Platform.runLater(() -> {
@@ -124,16 +126,28 @@ public class ClientThread extends Thread {
 
         return messageBubble;
     }
+//    
+//    private void handlePositionUpdate(String receivedMessage) {
+//        String positionData = receivedMessage.substring("updatePosition:".length());
+//        String[] parts = positionData.split(":");
+//        if (parts.length == 3) {
+//            int opponentID = Integer.parseInt(parts[0]);
+//            double x = Double.parseDouble(parts[1]);
+//            double y = Double.parseDouble(parts[2]);
+//            Platform.runLater(() -> {
+//                chatClient.updateOpponentPosition(opponentID, x, y); // call the method to update opponent's position
+//            });
+//        }
+//    }
     
     private void handlePositionUpdate(String receivedMessage) {
-        String positionData = receivedMessage.substring("updatePosition:".length());
-        String[] parts = positionData.split(":");
-        if (parts.length == 3) {
-            int opponentID = Integer.parseInt(parts[0]);
-            double x = Double.parseDouble(parts[1]);
-            double y = Double.parseDouble(parts[2]);
+        String[] parts = receivedMessage.split(";");
+        if (parts.length == 4) {
+            String identifier = parts[1];
+            double xPos = Double.parseDouble(parts[2]);
+            double yPos = Double.parseDouble(parts[3]);
             Platform.runLater(() -> {
-                chatClient.updateOpponentPosition(opponentID, x, y); // call the method to update opponent's position
+                chatClient.updateOpponentPosition(Integer.parseInt(identifier), xPos, yPos); // call the method to update opponent's position
             });
         }
     }
