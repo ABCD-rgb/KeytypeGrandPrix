@@ -89,7 +89,23 @@ public class ClientThread extends Thread {
                         }
                     }
                 });
-            } else { // handle regular chat messages
+            } else if (receivedMessage.endsWith(" has entered the waiting room.")) {
+            	String senderName = receivedMessage.substring(0, receivedMessage.length() - 30);
+            	Platform.runLater(() -> {            		
+            		chatClient.displayEnterMessage(senderName); // display enter message
+            	});
+            } else if (receivedMessage.endsWith(" is ready")) {
+            	String senderName = receivedMessage.substring(0, receivedMessage.length() - 9);
+            	Platform.runLater(() -> {            		
+            		chatClient.displayReadyMessage(senderName); // display ready message
+            	});
+            } else if (receivedMessage.endsWith(" has disconnected.")) {
+            	String senderName = receivedMessage.substring(0, receivedMessage.length() - 18);
+            	Platform.runLater(() -> {            		
+            		chatClient.displayExitMessage(senderName);	// display exit message
+            	});
+            } 
+            else { // handle regular chat messages
                 String[] parts = receivedMessage.split(": ");
                 if (parts.length == 2) {
                     String senderName = parts[0];
