@@ -1,6 +1,8 @@
 package application;
 
 import typingGame.Constants;
+import typingGame.PlayerScore;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,6 +10,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -23,6 +26,7 @@ public class Server {
 	private static List<String> previousChats = new ArrayList<>();	// list to store previous chats
 	private static int readyClients = 0;	// number of clients that are ready
 	private static String textToType = "";  // variable to store the sentence to be used for the game
+	private static List<PlayerScore> leaderboard = new ArrayList<>(); // list to store the leaderboard
 	
 	// connect the server socket to a specific port
 	static {
@@ -61,9 +65,13 @@ public class Server {
             
             // forward position update messages to all clients
             if (message.startsWith("updatePosition:")) {
+                String[] parts = message.split(":");
+                int userID = Integer.parseInt(parts[1]);
+                int currentWordIndex = Integer.parseInt(parts[2]);
+                byte[] positionData = message.getBytes();
                 for (int forward_port : players) {
                     if (forward_port != userPort) {
-                        DatagramPacket forwardPacket = new DatagramPacket(byteMessage, byteMessage.length, packet.getAddress(), forward_port);
+                        DatagramPacket forwardPacket = new DatagramPacket(positionData, positionData.length, packet.getAddress(), forward_port);
                         try {
                             socket.send(forwardPacket);
                         } catch (IOException e) {
@@ -91,7 +99,40 @@ public class Server {
     		        }
     		    }
     		    previousChats.add(enterMessage); // store the enter message in the list
-    		}   		
+    		}
+    		
+    		// when player has finished typing, send the score to the server
+    		else if (message.startsWith("score:")) {
+    		    String[] parts = message.split(":");
+    		    if (parts.length == 4) {
+    		        String username = parts[1];
+    		        double wordsPerMinute = Double.parseDouble(parts[2]);
+    		        double accuracy = Double.parseDouble(parts[3]);
+    		        PlayerScore playerScore = new PlayerScore(username, wordsPerMinute, accuracy);
+    		        leaderboard.add(playerScore);
+    		        Collections.sort(leaderboard);
+    		    }
+    		}
+    		
+    		// when client wants to view the leaderboards
+    		else if (message.equals("getLeaderboard")) {
+    	        // prepare the leaderboard data to send back to the client
+    	        StringBuilder leaderboardData = new StringBuilder();
+    	        for (PlayerScore playerScore : leaderboard) {
+    	            leaderboardData.append(playerScore.getUsername()).append(";")
+    	                    .append(playerScore.getWordsPerMinute()).append(";")
+    	                    .append(playerScore.getAccuracy()).append("|");
+    	        }
+
+    	        byte[] leaderboardBytes = leaderboardData.toString().getBytes();
+    	        DatagramPacket leaderboardPacket = new DatagramPacket(leaderboardBytes, leaderboardBytes.length, packet.getAddress(), packet.getPort());
+    	        try {
+    	            socket.send(leaderboardPacket);
+    	            System.out.println("Leaderboard data sent to client: " + leaderboardData.toString());
+    	        } catch (IOException e) {
+    	            e.printStackTrace();
+    	        }
+    	    }
     		    		
     		// when player sent a message to the server
     		else {

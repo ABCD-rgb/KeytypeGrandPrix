@@ -65,7 +65,17 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
-    
+
+//    public void connect() {
+//        try {
+//            if (socket == null) {
+//                socket = new DatagramSocket(); // init on any available port
+//            }
+//            address = InetAddress.getByName(Constants.IP);
+//        } catch (SocketException | UnknownHostException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
     
     public GameTimer getGameTimer() {
     	return this.gameTimer;
@@ -221,11 +231,11 @@ public class Client {
     
     // method to start the game
     public void handleStartGameMessage(int readyClients, int userID, String textToType) {
-    	Platform.runLater(() -> {
+        Platform.runLater(() -> {
             GraphicsContext gc = this.gc;
             gc.clearRect(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
             stage.setScene(gameScene);
-            this.gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, this.socket, this.address);
+            this.gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, this.socket, this.address, this);
             this.gameTimer.start();
         });
     }
@@ -319,7 +329,7 @@ public class Client {
         return messageBubble;
     }
     
-    // Method to disconnect from the server
+    // method to disconnect from the server
     public void disconnect() {
     	// remove the player from the player list in the server
     	String message = "disconnect;"+this.identifier+";"+this.isReady;
@@ -337,7 +347,11 @@ public class Client {
     	
     }
     
+    public void setGameTimer(GameTimer gameTimer) {
+        this.gameTimer = gameTimer;
+    }
     
-
+	public String getIdentifer() {
+		return this.identifier;
+	}
 }
-

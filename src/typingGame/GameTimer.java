@@ -51,68 +51,42 @@ public class GameTimer extends AnimationTimer {
     private int totalPlayers;
     private int userID;
     private boolean isMultiplayer;
-
-
-    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID) {
-        this.gc = gc;
-        this.gameScene = gameScene;
-        this.startTime = System.nanoTime();
-        this.words = textToType.split("\\s+");
-        this.gameDuration = calculateGameDuration(textToType);
-        this.timerText = new Text();
-        this.timerText.setFont(Font.font("Verdana", 16));
-        this.timerText.setFill(Color.WHITE);
-        this.currentWordIndex = 0;
-        this.totalCharactersTyped = 0;
-        this.correctCharactersTyped = 0;
-        this.stage = stage;
-        this.isMultiplayer = false;
-        this.totalPlayers = readyClients;
-        this.userID = userID;
-        
-        int xPos = 20;
-        for (int i=1; i<totalPlayers+1; i++) {
-        	int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
-        	if (this.userID == i) {
-        		this.carUser = new Car(xPos, yPos, userID);        		
-        	} else {        		
-        		carOpponents.add(new Car(xPos, yPos, i));
-        	}
-        }
-        
-        // methods ran at the start of GameTimer
-        this.handleKeyPressEvent();
-    }
+    private Client client;
     
-    // New constructor with socket and address parameters
-    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address) {
-        this.gc = gc;
+    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address, Client client) {
+//      this.gameDuration = calculateGameDuration(textToType);
+//      this.timerText = new Text();
+//      this.timerText.setFont(Font.font("Verdana", 16));
+//      this.timerText.setFill(Color.WHITE);
+//      this.isMultiplayer = false;
+    	this.gc = gc;
         this.gameScene = gameScene;
         this.startTime = System.nanoTime();
         this.words = textToType.split("\\s+");
-        this.gameDuration = calculateGameDuration(textToType);
-        this.timerText = new Text();
-        this.timerText.setFont(Font.font("Verdana", 16));
-        this.timerText.setFill(Color.WHITE);
         this.currentWordIndex = 0;
         this.totalCharactersTyped = 0;
         this.correctCharactersTyped = 0;
         this.stage = stage;
-        this.isMultiplayer = true;
+        this.isMultiplayer = (socket != null && address != null);
         this.totalPlayers = readyClients;
         this.userID = userID;
+        this.client = client;
 
         int xPos = 20;
-        for (int i=1; i<totalPlayers+1; i++) {
-            int yPos = ((Constants.WINDOW_HEIGHT/totalPlayers) * i) - ((Constants.WINDOW_HEIGHT/totalPlayers) / 2);
+        int ySpacing = 50;
+        int totalHeight = (totalPlayers - 1) * ySpacing;
+        int startY = (Constants.WINDOW_HEIGHT - totalHeight) / 2;
+
+        for (int i = 1; i <= totalPlayers; i++) {
+            int yPos = startY + (i - 1) * ySpacing;
             if (this.userID == i) {
                 this.carUser = new Car(xPos, yPos, userID);
             } else {
                 carOpponents.add(new Car(xPos, yPos, i));
             }
         }
-
-        // Assign socket and address
+        
+        // assign socket and address
         this.socket = socket;
         this.address = address;
 
@@ -125,23 +99,19 @@ public class GameTimer extends AnimationTimer {
     public void handle(long currentNanoTime) {
     	try {
 	        long elapsedTime = currentNanoTime - startTime;
-	        remainingTime = gameDuration - elapsedTime / 1_000_000_000;
-	        
-	        // check if time is up
-	        if (remainingTime <= 0) {
-	            stop(); // stop the game
-	            gameOverMessage(); // display game over message
-	            gameScene.setOnKeyPressed(null);
-	            handleGameOverKeyPress();
-	            return;
-	        }
+//	        remainingTime = gameDuration - elapsedTime / 1_000_000_000;
+//	        
+//	        // check if time is up
+//	        if (remainingTime <= 0) {
+//	            stop(); // stop the game
+//	            gameOverMessage(); // display game over message
+//	            gameScene.setOnKeyPressed(null);
+//	            handleGameOverKeyPress();
+//	            return;
+//	        }
 	
 	        // render background, car, text to type, and timer
 	        this.renderBackground();
-	        
-	        // render road image
-	        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
-	        gc.drawImage(roadImage, 0, 0);
 	        
 	        this.renderCars();
 	        this.renderTextToType();
@@ -168,11 +138,28 @@ public class GameTimer extends AnimationTimer {
         gc.setFill(Color.web("#A6C9CB"));
         gc.fillRect(0, 0, gameScene.getWidth(), gameScene.getHeight());
     }
-
+        
     private void renderCars() {
+        for (int i = 0; i < totalPlayers; i++) {
+            double yPos;
+            if (i == userID - 1) {
+                yPos = carUser.getYPos();
+            } else if (i < carOpponents.size()) {
+                yPos = carOpponents.get(i).getYPos();
+            } else {
+                continue;
+            }
+                    
+	        // render road image
+//	        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
+//          Image roadImage = new Image("images/road.png", gameScene.getWidth(), Constants.CAR_HEIGHT * 20, false, false);
+//          gc.drawImage(roadImage, 0, yPos - Constants.CAR_HEIGHT);
+//	        gc.drawImage(roadImage, 0, 0);
+        }
+
         carUser.render(gc);
         for (Car car : carOpponents) {
-        	car.render(gc);
+            car.render(gc);
         }
     }
 
@@ -303,15 +290,15 @@ public class GameTimer extends AnimationTimer {
             carUser.moveToEndOfScreen();
         }
     }
-   
+    
     public void moveOpponent(int index, int curr) {
-        //System.out.println("moveOpponent called with index: " + index + ", curr: " + curr);
+        System.out.println("moveOpponent called with index: " + index + ", curr: " + curr);
         Car opponent = null;
 
         for (Car car : carOpponents) {
             if (index == car.getCarID()) {
                 opponent = car;
-                break; // Found the car, no need to continue loop
+                break; // found the car, no need to continue loop
             }
         }
 
@@ -338,7 +325,7 @@ public class GameTimer extends AnimationTimer {
 
     private double calculateAccuracy() {
         if (totalCharactersTyped == 0) {
-            return 100.0;
+            return 0.0; // return 0 accuracy if no characters are typed
         }
         return (double) correctCharactersTyped / totalCharactersTyped * 100.0;
     }
@@ -360,10 +347,7 @@ public class GameTimer extends AnimationTimer {
                             moveCar();
                         }
                     } else if (!currentWord.isEmpty()) {
-
                         char typedChar;
-              
-
                         if (e.getCode() == KeyCode.CAPS) {
                             // check if Caps Lock is pressed
                             String text = e.getText();
@@ -449,7 +433,7 @@ public class GameTimer extends AnimationTimer {
     }
     
     private void handleGameOverKeyPress() {
-        gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+    	gameScene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             public void handle(KeyEvent e) {
                 if (e.getCode() == KeyCode.ESCAPE) {
                 	// remove the player from the player list in the server
@@ -463,7 +447,7 @@ public class GameTimer extends AnimationTimer {
                 	} finally {
                 		if (socket != null && !socket.isClosed()) {
                 			socket.close();
-                		}    		
+                		}
                 	}
                     // return to the main menu
                     Game game = new Game();
@@ -471,8 +455,19 @@ public class GameTimer extends AnimationTimer {
                 }
             }
         });
+    	
+    	// send the score to the server along with the username
+        if (isMultiplayer) {
+            String message = "score:" + client.getIdentifer() + ":" + calculateWordsPerMinute() + ":" + calculateAccuracy();
+            byte[] scoreData = message.getBytes();
+            DatagramPacket scoreSend = new DatagramPacket(scoreData, scoreData.length, address, SERVER_PORT);
+            try {
+                socket.send(scoreSend);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-        // TODO: RANK based on player's rank (1st,2nd,3rd,etc.)
         // display game over popup with stats
         String gameOverStats = String.format("Words Per Minute: %.2f\nAccuracy: %.2f%%", calculateWordsPerMinute(), calculateAccuracy());
         displayGameOverPopup(gameOverStats);

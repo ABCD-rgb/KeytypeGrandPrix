@@ -34,28 +34,32 @@ public class ClientThread extends Thread {
         System.out.println("starting thread");
         
         while (true) {
-        	try{
-				Thread.sleep(1);
-			}catch(Exception ioe){}
+        	try {
+        		Thread.sleep(1);
+        	} catch (Exception ioe) {}
         	
-            DatagramPacket packet = new DatagramPacket(incoming, incoming.length);
+        	DatagramPacket packet = new DatagramPacket(incoming, incoming.length);
             try {
                 socket.receive(packet);    // receive packet
             } catch (IOException e) {
-                throw new RuntimeException(e);
+//            	throw new RuntimeException(e);
+            	if (!socket.isClosed()) {
+                    throw new RuntimeException(e);
+                } else {
+                    // socket is closed, exit the loop
+                    break;
+                }
             }
 
             String receivedMessage = new String(packet.getData(), 0, packet.getLength());
-            //System.out.println(receivedMessage);
             if (receivedMessage.startsWith("updatePosition:")) {
-                //System.out.println("Received: " + receivedMessage);
                 String[] parts = receivedMessage.split(":");
                 if (parts.length == 3) {
-                    int enemyIndex = Integer.parseInt(parts[1]);
-                    int enemyCurrentIndex = Integer.parseInt(parts[2]);
-                    // for testing
-                    //System.out.println("Updating opponent with enemyIndex: " + enemyIndex + ", enemyCurrentIndex: " + enemyCurrentIndex);
-                    chatClient.getGameTimer().moveOpponent(enemyIndex, enemyCurrentIndex);
+                    int opponentID = Integer.parseInt(parts[1]);
+                    int currentWordIndex = Integer.parseInt(parts[2]);
+                    Platform.runLater(() -> {
+                        chatClient.getGameTimer().moveOpponent(opponentID, currentWordIndex);
+                    });
                 }
             }
 
@@ -120,36 +124,33 @@ public class ClientThread extends Thread {
                     });
                 }
             }
-        }
+		}     	            
     }
-       
-    
-    // create a message bubble with the given message, sender name, and style
-    private TextFlow createMessageBubble(String message, boolean isMyMessage, String senderName) {
-        TextFlow messageBubble = new TextFlow();
-        messageBubble.setMaxWidth(300);
-        messageBubble.setPadding(new Insets(10));
-
-        Text senderText = new Text();
-        senderText.setFill(Color.web("#2196F3"));
-        senderText.setStyle("-fx-font-weight: bold;");
-//        clientChat.moveEnemy(userId, position);
-        Text messageText = new Text(message);
-        messageText.setFill(Color.BLACK);
-
-        if (isMyMessage) {
-            messageBubble.setStyle("-fx-background-color: #DCF8C6; -fx-background-radius: 20px;");
-            VBox.setMargin(messageBubble, new Insets(0, 0, 0, 475));
-            senderText.setText("You: ");
-        } else {
-            messageBubble.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 20px;");
-            VBox.setMargin(messageBubble, new Insets(0, 475, 0, 0));
-            senderText.setText(senderName + ": ");
-        }
-
-        messageBubble.getChildren().addAll(senderText, messageText);
-
-        return messageBubble;
-    }
-
+   
+	// create a message bubble with the given message, sender name, and style
+	private TextFlow createMessageBubble(String message, boolean isMyMessage, String senderName) {
+	    TextFlow messageBubble = new TextFlow();
+	    messageBubble.setMaxWidth(300);
+	    messageBubble.setPadding(new Insets(10));
+	
+	    Text senderText = new Text();
+	    senderText.setFill(Color.web("#2196F3"));
+	    senderText.setStyle("-fx-font-weight: bold;");
+	    Text messageText = new Text(message);
+	    messageText.setFill(Color.BLACK);
+	
+	    if (isMyMessage) {
+	        messageBubble.setStyle("-fx-background-color: #DCF8C6; -fx-background-radius: 20px;");
+	        VBox.setMargin(messageBubble, new Insets(0, 0, 0, 475));
+	        senderText.setText("You: ");
+	    } else {
+	        messageBubble.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 20px;");
+	        VBox.setMargin(messageBubble, new Insets(0, 475, 0, 0));
+	        senderText.setText(senderName + ": ");
+	    }
+	
+	    messageBubble.getChildren().addAll(senderText, messageText);
+	
+	    return messageBubble;
+	}
 }
