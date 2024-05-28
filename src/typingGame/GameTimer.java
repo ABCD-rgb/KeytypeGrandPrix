@@ -51,8 +51,9 @@ public class GameTimer extends AnimationTimer {
     private int totalPlayers;
     private int userID;
     private boolean isMultiplayer;
+    private Client client;
     
-    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address) {
+    public GameTimer(Scene gameScene, GraphicsContext gc, String textToType, Stage stage, int readyClients, int userID, DatagramSocket socket, InetAddress address, Client client) {
 //      this.gameDuration = calculateGameDuration(textToType);
 //      this.timerText = new Text();
 //      this.timerText.setFont(Font.font("Verdana", 16));
@@ -69,6 +70,7 @@ public class GameTimer extends AnimationTimer {
         this.isMultiplayer = (socket != null && address != null);
         this.totalPlayers = readyClients;
         this.userID = userID;
+        this.client = client;
 
         int xPos = 20;
         int ySpacing = 50;
@@ -111,10 +113,6 @@ public class GameTimer extends AnimationTimer {
 	        // render background, car, text to type, and timer
 	        this.renderBackground();
 	        
-	        // render road image
-	        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
-	        gc.drawImage(roadImage, 0, 0);
-	        
 	        this.renderCars();
 	        this.renderTextToType();
 	        this.renderAccuracyMeter();
@@ -149,10 +147,14 @@ public class GameTimer extends AnimationTimer {
             } else if (i < carOpponents.size()) {
                 yPos = carOpponents.get(i).getYPos();
             } else {
-                continue; // Skip rendering road if opponent car doesn't exist
+                continue;
             }
-            Image roadImage = new Image("images/road.png", gameScene.getWidth(), Constants.CAR_HEIGHT * 2, false, false);
-            gc.drawImage(roadImage, 0, yPos - Constants.CAR_HEIGHT);
+                    
+	        // render road image
+//	        Image roadImage = new Image("images/road.png", gameScene.getWidth(), gameScene.getHeight(), false, false);
+//          Image roadImage = new Image("images/road.png", gameScene.getWidth(), Constants.CAR_HEIGHT * 20, false, false);
+//          gc.drawImage(roadImage, 0, yPos - Constants.CAR_HEIGHT);
+//	        gc.drawImage(roadImage, 0, 0);
         }
 
         carUser.render(gc);
@@ -454,9 +456,9 @@ public class GameTimer extends AnimationTimer {
             }
         });
     	
-        // Send the score to the server
+    	// send the score to the server along with the username
         if (isMultiplayer) {
-            String message = "score:" + userID + ":" + calculateWordsPerMinute() + ":" + calculateAccuracy();
+            String message = "score:" + client.getIdentifer() + ":" + calculateWordsPerMinute() + ":" + calculateAccuracy();
             byte[] scoreData = message.getBytes();
             DatagramPacket scoreSend = new DatagramPacket(scoreData, scoreData.length, address, SERVER_PORT);
             try {
@@ -464,10 +466,9 @@ public class GameTimer extends AnimationTimer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-//        	client.sendScore(calculateWordsPerMinute(), calculateAccuracy());
         }
 
-        // Display game over popup with stats
+        // display game over popup with stats
         String gameOverStats = String.format("Words Per Minute: %.2f\nAccuracy: %.2f%%", calculateWordsPerMinute(), calculateAccuracy());
         displayGameOverPopup(gameOverStats);
     }

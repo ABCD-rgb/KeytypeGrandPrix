@@ -235,20 +235,10 @@ public class Client {
             GraphicsContext gc = this.gc;
             gc.clearRect(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
             stage.setScene(gameScene);
-            this.gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, this.socket, this.address);
+            this.gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, this.socket, this.address, this);
             this.gameTimer.start();
         });
     }
-//    
-//    public void handleStartGameMessage(int readyClients, int userID, String textToType) {
-//        Platform.runLater(() -> {
-//            GraphicsContext gc = this.gc;
-//            gc.clearRect(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
-//            stage.setScene(gameScene);
-//            GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, readyClients, userID, socket, address);
-//            gameTimer.start();
-//        });
-//    }
     
     // method to send a message to the server
     public void displayEnterMessage(String userName) {
@@ -339,20 +329,7 @@ public class Client {
         return messageBubble;
     }
     
-    // method to save the player's score
-    public void sendScore(double wordsPerMinute, double accuracy) {
-        String message = "score;" + identifier + ";" + wordsPerMinute + ";" + accuracy;
-        byte[] data = message.getBytes();
-        DatagramPacket packet = new DatagramPacket(data, data.length, address, SERVER_PORT);
-        try {
-            socket.send(packet);
-            System.out.println("Score sent to server: " + message);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    // Method to disconnect from the server
+    // method to disconnect from the server
     public void disconnect() {
     	// remove the player from the player list in the server
     	String message = "disconnect;"+this.identifier+";"+this.isReady;

@@ -458,7 +458,7 @@ public class Game {
 	    newTextToType();
 	    GraphicsContext gc = this.canvas.getGraphicsContext2D();
 	    // 1 and 1 is for readyClients and userID respectively (for multiplayer consideration)
-	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, 1, 1, null, null);
+	    GameTimer gameTimer = new GameTimer(gameScene, gc, textToType, stage, 1, 1, null, null, null);
 	    stage.setScene(gameScene);
 	    gameTimer.start();
 	}
